@@ -1,0 +1,212 @@
+---
+/**
+ * Astro wrapper for the quiz island.
+ *
+ * This file is where the options are BUILT — from `enabledCategories`, the
+ * same array that decides the nav links, the routes, the sitemap and which
+ * products the database will serve. The React component receives them as a
+ * prop and has no list of its own.
+ *
+ * Turning a category off therefore removes it from the quiz automatically.
+ * Nobody has to remember that the quiz also has a copy, because it doesn't.
+ */
+import Quiz from './islands/Quiz.tsx';
+import { site, derived, enabledCategories } from '../config';
+
+interface Props {
+  sourcePage: string;
+  productSlug?: string;
+  heading?: string;
+  variant?: 'primary' | 'secondary';
+  /** 'load' for above the fold, 'visible' for further down the page. */
+  hydrate?: 'load' | 'visible';
+}
+
+const {
+  sourcePage,
+  productSlug = '',
+  heading = 'What are you shopping for?',
+  variant = 'primary',
+  hydrate = 'visible',
+} = Astro.props;
+
+const options = [
+  ...enabledCategories.map((c) => ({ slug: c.slug, label: c.label })),
+  // Empty slug = "no category". The lead still gets captured; it just is not
+  // tagged with something the client does not sell.
+  { slug: '', label: 'Just browsing' },
+];
+---
+
+<div class="quiz-shell glass-panel">
+  {
+    hydrate === 'load' ? (
+      <Quiz
+        client:load
+        options={options}
+        businessName={site.identity.name}
+        phoneDisplay={derived.phoneDisplay}
+        telHref={derived.telHref}
+        sourcePage={sourcePage}
+        productSlug={productSlug}
+        heading={heading}
+        variant={variant}
+      />
+    ) : (
+      <Quiz
+        client:visible
+        options={options}
+        businessName={site.identity.name}
+        phoneDisplay={derived.phoneDisplay}
+        telHref={derived.telHref}
+        sourcePage={sourcePage}
+        productSlug={productSlug}
+        heading={heading}
+        variant={variant}
+      />
+    )
+  }
+</div>
+
+<style is:global>
+  /* Not scoped: these style a React island, which Astro's scoping does not
+     reach. Prefixed with .quiz- so they cannot collide. */
+  .quiz-shell {
+    padding: 26px 22px 24px;
+  }
+  @media (min-width: 700px) {
+    .quiz-shell {
+      padding: 32px 30px 30px;
+    }
+  }
+
+  .quiz-h {
+    font-family: var(--brand-font-display);
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--brand-deep);
+    line-height: 1.2;
+  }
+  .quiz-sub {
+    margin-top: 8px;
+    font-size: 0.88rem;
+    color: var(--brand-ink-muted);
+  }
+
+  .quiz-options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 18px;
+  }
+  @media (min-width: 700px) {
+    .quiz-options {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  .quiz-option {
+    min-height: 60px;
+    padding: 14px 12px;
+    border: 2px solid var(--brand-line);
+    border-radius: 14px;
+    background: var(--brand-surface);
+    font-family: var(--brand-font-display);
+    font-weight: 700;
+    font-size: 0.92rem;
+    color: var(--brand-deep);
+    cursor: pointer;
+    transition:
+      border-color 0.25s,
+      transform 0.25s var(--ease-out),
+      box-shadow 0.25s;
+  }
+  .quiz-option:hover {
+    border-color: var(--brand-accent);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 26px -14px rgb(var(--brand-accent-deep-rgb) / 0.55);
+  }
+
+  .quiz-change {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: var(--brand-primary);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .quiz-form {
+    margin-top: 16px;
+  }
+  .quiz-label {
+    display: block;
+    margin-top: 12px;
+    margin-bottom: 5px;
+    font-family: var(--brand-font-mono);
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--brand-ink-muted);
+  }
+  .quiz-optional {
+    text-transform: none;
+    letter-spacing: 0;
+    opacity: 0.8;
+  }
+  .quiz-input {
+    width: 100%;
+    min-height: 52px;
+    padding: 13px 15px;
+    border: 1px solid var(--brand-line);
+    border-radius: 12px;
+    background: var(--brand-surface);
+    font-family: var(--brand-font-body);
+    font-size: 1rem; /* 16px — anything smaller zooms the page on iOS */
+    color: var(--brand-ink);
+  }
+  .quiz-input:focus {
+    border-color: var(--brand-accent);
+  }
+  textarea.quiz-input {
+    min-height: auto;
+    resize: vertical;
+  }
+
+  .quiz-submit {
+    margin-top: 18px;
+  }
+
+  .quiz-error {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: rgb(var(--brand-urgent-rgb) / 0.08);
+    border: 1px solid rgb(var(--brand-urgent-rgb) / 0.3);
+    color: var(--brand-ink);
+    font-size: 0.86rem;
+  }
+  .quiz-error a {
+    color: var(--brand-primary);
+    font-weight: 700;
+    text-decoration: underline;
+  }
+
+  .quiz-consent {
+    margin-top: 12px;
+    font-size: 0.7rem;
+    line-height: 1.5;
+    color: var(--brand-ink-muted);
+  }
+
+  /* Honeypot: off-canvas rather than display:none, so a bot that checks
+     computed styles still fills it in. */
+  .quiz-hp {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+</style>

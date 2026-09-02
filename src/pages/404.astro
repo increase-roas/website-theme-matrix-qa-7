@@ -1,0 +1,59 @@
+---
+/**
+ * 404 — branded, and it offers the customer somewhere to go.
+ *
+ * The category links come from config, so this page cannot advertise a
+ * category the client stopped selling.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { site, derived, enabledCategories } from '../config';
+---
+
+<BaseLayout title="Page not found" noindex>
+  <div class="wrap not-found">
+    <p class="eyebrow">404</p>
+    <h1>We can't find that page</h1>
+    <p>The link may be out of date. Here's where most people go next:</p>
+
+    <ul class="nf-links">
+      {
+        enabledCategories.map((c) => (
+          <li>
+            <a class="btn btn-ghost-blue" href={c.href}>
+              {c.label}
+            </a>
+          </li>
+        ))
+      }
+      <li>
+        <a class="btn btn-gold" href={site.nav.primaryCta.href}>{site.nav.primaryCta.label}</a>
+      </li>
+      <li>
+        <a class="btn btn-ghost-blue" href={derived.telHref}>Call {derived.phoneDisplay}</a>
+      </li>
+    </ul>
+  </div>
+</BaseLayout>
+
+<style>
+  .not-found {
+    padding: 80px 20px 104px;
+    text-align: center;
+  }
+  .not-found h1 {
+    font-size: clamp(1.9rem, 5vw, 3rem);
+    color: var(--brand-deep);
+  }
+  .not-found p {
+    margin-top: 12px;
+    color: var(--brand-ink-muted);
+  }
+  .nf-links {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 30px;
+  }
+</style>

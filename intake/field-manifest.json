@@ -1,0 +1,1631 @@
+{
+  "$comment": "GENERATED FILE — do not edit. Produced by intake/build-manifest.mjs from src/config/schema.ts. Run `node intake/build-manifest.mjs` after any schema change.",
+  "generatedFrom": "src/config/schema.ts",
+  "manifestVersion": 1,
+  "groups": [
+    {
+      "id": "business",
+      "title": "The business",
+      "blurb": "Name, year founded, what they do."
+    },
+    {
+      "id": "contact",
+      "title": "How to reach them",
+      "blurb": "One phone number. Everything else is derived from it."
+    },
+    {
+      "id": "location",
+      "title": "Where they are",
+      "blurb": "Street address, plus the map pin coordinates."
+    },
+    {
+      "id": "hours",
+      "title": "Opening hours",
+      "blurb": "Feeds the footer AND the schema.org hours. Typed once."
+    },
+    {
+      "id": "categories",
+      "title": "What they sell",
+      "blurb": "Checkboxes. Unchecked means the category does not exist on the site at all."
+    },
+    {
+      "id": "service-areas",
+      "title": "Areas served",
+      "blurb": "Towns and regions. Footer pills + schema.org areaServed."
+    },
+    {
+      "id": "social",
+      "title": "Social profiles",
+      "blurb": "Footer icons AND schema.org sameAs come from these."
+    },
+    {
+      "id": "brand",
+      "title": "Look and feel",
+      "blurb": "Pre-filled with the navy + gold default. Override per client."
+    },
+    {
+      "id": "nav",
+      "title": "Navigation",
+      "blurb": "Category links are automatic. These are the extras."
+    },
+    {
+      "id": "homepage",
+      "title": "Homepage",
+      "blurb": "The page is a list of sections. The generator lays out a sensible default; extra material is added later."
+    },
+    {
+      "id": "financing",
+      "title": "Financing",
+      "blurb": "Optional. Leave the whole section blank if they do not offer it — the page then does not exist."
+    },
+    {
+      "id": "integrations",
+      "title": "Integrations",
+      "blurb": "On/off only. Keys and tokens are wrangler secrets, never config."
+    },
+    {
+      "id": "system",
+      "title": "System",
+      "blurb": "Set by the generator. Not shown on the form."
+    }
+  ],
+  "counts": {
+    "total": 95,
+    "ask": 44,
+    "default": 40,
+    "fixed": 3,
+    "composed": 8
+  },
+  "neverAsk": [
+    {
+      "key": "isTemplate",
+      "from": "deployMode"
+    },
+    {
+      "key": "phoneDisplay",
+      "from": "contact.phone (+ optional phoneDisplayOverride)"
+    },
+    {
+      "key": "telHref",
+      "from": "contact.phone"
+    },
+    {
+      "key": "smsHref",
+      "from": "contact.smsPhone ?? contact.phone"
+    },
+    {
+      "key": "emailHref",
+      "from": "contact.email"
+    },
+    {
+      "key": "yearsInBusiness",
+      "from": "identity.foundedYear + current year"
+    },
+    {
+      "key": "copyrightLine",
+      "from": "identity.name + current year"
+    },
+    {
+      "key": "addressOneLine",
+      "from": "address.*"
+    },
+    {
+      "key": "addressLines",
+      "from": "address.*"
+    },
+    {
+      "key": "mapEmbedUrl",
+      "from": "address.* (URL-encoded)"
+    },
+    {
+      "key": "directionsUrl",
+      "from": "address.* + googlePlaceId"
+    },
+    {
+      "key": "hoursDisplay",
+      "from": "hours[]"
+    },
+    {
+      "key": "socialLinks",
+      "from": "social.*"
+    },
+    {
+      "key": "sameAs",
+      "from": "social.*"
+    },
+    {
+      "key": "headerNav",
+      "from": "nav.items + enabled categories"
+    },
+    {
+      "key": "footerNav",
+      "from": "nav.items + enabled categories"
+    },
+    {
+      "key": "enabledCategories",
+      "from": "categories map + the category catalog"
+    },
+    {
+      "key": "enabledCategorySlugs",
+      "from": "categories map"
+    }
+  ],
+  "fields": [
+    {
+      "path": "deployMode",
+      "type": "enum",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "enum": [
+          "template",
+          "client"
+        ]
+      },
+      "source": "fixed",
+      "group": "system",
+      "label": "Deploy mode",
+      "help": "The generator ALWAYS writes 'template'. An unreviewed config therefore cannot deploy — the template's existing gate refuses it. Approval flips it to 'client'.",
+      "example": "template"
+    },
+    {
+      "path": "identity.name",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "minLength": 1
+      },
+      "source": "ask",
+      "group": "business",
+      "label": "Business name",
+      "help": "Exactly as it should appear in the header, footer, page titles and Google results.",
+      "control": "text",
+      "example": "Sun Pool & Spa Supply"
+    },
+    {
+      "path": "identity.shortName",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "minLength": 1
+      },
+      "source": "ask",
+      "group": "business",
+      "label": "Short name",
+      "help": "For tight spaces — mobile nav, footer bottom bar.",
+      "control": "text",
+      "example": "Sun Pool"
+    },
+    {
+      "path": "identity.foundedYear",
+      "type": "number",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "integer": true,
+        "min": 1800,
+        "max": 2026
+      },
+      "source": "ask",
+      "group": "business",
+      "label": "Year founded",
+      "help": "Check the logo. This one number produces every \"serving since\" and \"X years\" line on the site.",
+      "control": "number",
+      "example": 1978
+    },
+    {
+      "path": "identity.tagline",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "minLength": 1
+      },
+      "source": "ask",
+      "group": "business",
+      "label": "One-line description",
+      "help": "Used for the meta description fallback and schema.org. One sentence.",
+      "control": "textarea",
+      "example": "The best hot tub and swim spa store in San Diego County. Real units on the floor."
+    },
+    {
+      "path": "identity.siteUrl",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "format": "url"
+      },
+      "source": "ask",
+      "group": "business",
+      "label": "Website address",
+      "help": "The live https:// domain, no trailing slash. Drives canonical URLs and the sitemap.",
+      "control": "url",
+      "example": "https://sunpoolandspasupply.com"
+    },
+    {
+      "path": "identity.schemaType",
+      "type": "string",
+      "required": false,
+      "nullable": false,
+      "default": "HomeAndConstructionBusiness",
+      "constraints": {
+        "minLength": 1
+      },
+      "source": "default",
+      "group": "business",
+      "label": "Business type (schema.org)",
+      "help": "How Google should classify the business. The default suits a spa/hot-tub dealer.",
+      "control": "select",
+      "example": "HomeAndConstructionBusiness"
+    },
+    {
+      "path": "contact.phone",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "pattern": "^\\+[1-9]\\d{7,14}$",
+        "format": "regex"
+      },
+      "source": "ask",
+      "group": "contact",
+      "label": "Phone number",
+      "help": "E.164 format, e.g. +16195618587. The display string and the tap-to-call link are both derived from this — there is no second place to type a number.",
+      "control": "tel",
+      "example": "+16195618587"
+    },
+    {
+      "path": "contact.phoneDisplayOverride",
+      "type": "string",
+      "required": true,
+      "nullable": true,
+      "constraints": {
+        "minLength": 1
+      },
+      "source": "ask",
+      "group": "contact",
+      "label": "Phone display override",
+      "help": "Leave blank for US numbers. Only needed if the automatic formatter cannot render the number correctly.",
+      "control": "text",
+      "example": null
+    },
+    {
+      "path": "contact.smsPhone",
+      "type": "string",
+      "required": true,
+      "nullable": true,
+      "constraints": {
+        "pattern": "^\\+[1-9]\\d{7,14}$",
+        "format": "regex"
+      },
+      "source": "ask",
+      "group": "contact",
+      "label": "Separate SMS number",
+      "help": "Leave blank if texts go to the main number.",
+      "control": "tel",
+      "example": null
+    },
+    {
+      "path": "contact.email",
+      "type": "string",
+      "required": true,
+      "nullable": true,
+      "constraints": {
+        "format": "email",
+        "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+      },
+      "source": "ask",
+      "group": "contact",
+      "label": "Public email address",
+      "help": "Leave blank if the business does not publish one. Blank means no email appears anywhere on the site.",
+      "control": "email",
+      "example": null
+    },
+    {
+      "path": "address.street",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "minLength": 1
+      },
+      "source": "ask",
+      "group": "location",
+      "label": "Street address",
+      "control": "text",
+      "example": "12473 Woodside Ave"
+    },
+    {
+      "path": "address.street2",
+      "type": "string",
+      "required": true,
+      "nullable": true,
+      "source": "ask",
+      "group": "location",
+      "label": "Suite / unit",
+      "help": "Leave blank if there is none.",
+      "control": "text",
+      "example": "Suite C"
+    },
+    {
+      "path": "address.city",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "minLength": 1
+      },
+      "source": "ask",
+      "group": "location",
+      "label": "City",
+      "control": "text",
+      "example": "Lakeside"
+    },
+    {
+      "path": "address.region",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "minLength": 1
+      },
+      "source": "ask",
+      "group": "location",
+      "label": "State / province",
+      "control": "text",
+      "example": "CA"
+    },
+    {
+      "path": "address.postalCode",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "minLength": 1
+      },
+      "source": "ask",
+      "group": "location",
+      "label": "ZIP / postal code",
+      "control": "text",
+      "example": "92040"
+    },
+    {
+      "path": "address.country",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "length": 2
+      },
+      "source": "default",
+      "group": "location",
+      "label": "Country code",
+      "help": "Two letters, ISO-3166.",
+      "control": "text",
+      "example": "US"
+    },
+    {
+      "path": "address.latitude",
+      "type": "number",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "min": -90,
+        "max": 90
+      },
+      "source": "ask",
+      "group": "location",
+      "label": "Latitude",
+      "help": "Right-click the shop on Google Maps and copy the first number. Required — the map embed is derived from the address, but schema.org needs the real coordinates and the build fails without them.",
+      "control": "number",
+      "example": 32.857086
+    },
+    {
+      "path": "address.longitude",
+      "type": "number",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "min": -180,
+        "max": 180
+      },
+      "source": "ask",
+      "group": "location",
+      "label": "Longitude",
+      "help": "The second number from the same right-click.",
+      "control": "number",
+      "example": -116.924479
+    },
+    {
+      "path": "address.googlePlaceId",
+      "type": "string",
+      "required": true,
+      "nullable": true,
+      "source": "ask",
+      "group": "location",
+      "label": "Google Place ID",
+      "help": "Optional. Improves the \"get directions\" link. Leave blank if unknown.",
+      "control": "text",
+      "example": null
+    },
+    {
+      "path": "hours",
+      "type": "array<object>",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "minLength": 1
+      },
+      "source": "composed",
+      "group": "hours",
+      "label": "Opening hours",
+      "help": "One row per distinct set of hours. At least one row required.",
+      "control": "repeater"
+    },
+    {
+      "path": "hours[].days",
+      "type": "array<enum>",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "minLength": 1,
+        "element": {
+          "enum": [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday"
+          ]
+        }
+      },
+      "source": "ask",
+      "group": "hours",
+      "label": "Days",
+      "control": "multiselect",
+      "example": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday"
+      ]
+    },
+    {
+      "path": "hours[].opens",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+        "format": "regex"
+      },
+      "source": "ask",
+      "group": "hours",
+      "label": "Opens",
+      "help": "24-hour, e.g. 09:30.",
+      "control": "time",
+      "example": "09:30"
+    },
+    {
+      "path": "hours[].closes",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+        "format": "regex"
+      },
+      "source": "ask",
+      "group": "hours",
+      "label": "Closes",
+      "help": "24-hour, e.g. 17:00.",
+      "control": "time",
+      "example": "17:00"
+    },
+    {
+      "path": "social.facebook",
+      "type": "string",
+      "required": true,
+      "nullable": true,
+      "constraints": {
+        "format": "url"
+      },
+      "source": "ask",
+      "group": "social",
+      "label": "Facebook page",
+      "help": "Full https:// URL, or blank.",
+      "control": "url",
+      "example": null
+    },
+    {
+      "path": "social.instagram",
+      "type": "string",
+      "required": true,
+      "nullable": true,
+      "constraints": {
+        "format": "url"
+      },
+      "source": "ask",
+      "group": "social",
+      "label": "Instagram",
+      "control": "url",
+      "example": null
+    },
+    {
+      "path": "social.youtube",
+      "type": "string",
+      "required": true,
+      "nullable": true,
+      "constraints": {
+        "format": "url"
+      },
+      "source": "ask",
+      "group": "social",
+      "label": "YouTube",
+      "control": "url",
+      "example": null
+    },
+    {
+      "path": "social.tiktok",
+      "type": "string",
+      "required": true,
+      "nullable": true,
+      "constraints": {
+        "format": "url"
+      },
+      "source": "ask",
+      "group": "social",
+      "label": "TikTok",
+      "control": "url",
+      "example": null
+    },
+    {
+      "path": "social.x",
+      "type": "string",
+      "required": true,
+      "nullable": true,
+      "constraints": {
+        "format": "url"
+      },
+      "source": "ask",
+      "group": "social",
+      "label": "X / Twitter",
+      "control": "url",
+      "example": null
+    },
+    {
+      "path": "social.linkedin",
+      "type": "string",
+      "required": true,
+      "nullable": true,
+      "constraints": {
+        "format": "url"
+      },
+      "source": "ask",
+      "group": "social",
+      "label": "LinkedIn",
+      "control": "url",
+      "example": null
+    },
+    {
+      "path": "social.googleBusiness",
+      "type": "string",
+      "required": true,
+      "nullable": true,
+      "constraints": {
+        "format": "url"
+      },
+      "source": "ask",
+      "group": "social",
+      "label": "Google Business Profile",
+      "control": "url",
+      "example": null
+    },
+    {
+      "path": "brand.colors.primary",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "pattern": "^#[0-9a-fA-F]{6}$",
+        "format": "regex"
+      },
+      "source": "default",
+      "group": "brand",
+      "label": "Primary",
+      "help": "The main brand colour.",
+      "control": "color",
+      "example": "#16469B"
+    },
+    {
+      "path": "brand.colors.primaryMid",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "pattern": "^#[0-9a-fA-F]{6}$",
+        "format": "regex"
+      },
+      "source": "default",
+      "group": "brand",
+      "label": "Primary — mid",
+      "control": "color",
+      "example": "#0F327A"
+    },
+    {
+      "path": "brand.colors.deep",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "pattern": "^#[0-9a-fA-F]{6}$",
+        "format": "regex"
+      },
+      "source": "default",
+      "group": "brand",
+      "label": "Primary — deep",
+      "help": "Hairline borders are derived from this at 12% opacity.",
+      "control": "color",
+      "example": "#0B2559"
+    },
+    {
+      "path": "brand.colors.night",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "pattern": "^#[0-9a-fA-F]{6}$",
+        "format": "regex"
+      },
+      "source": "default",
+      "group": "brand",
+      "label": "Primary — night",
+      "control": "color",
+      "example": "#06183D"
+    },
+    {
+      "path": "brand.colors.abyss",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "pattern": "^#[0-9a-fA-F]{6}$",
+        "format": "regex"
+      },
+      "source": "default",
+      "group": "brand",
+      "label": "Primary — darkest",
+      "help": "Base of the hero gradient.",
+      "control": "color",
+      "example": "#030C20"
+    },
+    {
+      "path": "brand.colors.accent",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "pattern": "^#[0-9a-fA-F]{6}$",
+        "format": "regex"
+      },
+      "source": "default",
+      "group": "brand",
+      "label": "Accent",
+      "help": "The call-to-action colour.",
+      "control": "color",
+      "example": "#FFB81C"
+    },
+    {
+      "path": "brand.colors.accentSoft",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "pattern": "^#[0-9a-fA-F]{6}$",
+        "format": "regex"
+      },
+      "source": "default",
+      "group": "brand",
+      "label": "Accent — soft",
+      "help": "Headings on dark backgrounds.",
+      "control": "color",
+      "example": "#FFCB57"
+    },
+    {
+      "path": "brand.colors.accentDeep",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "pattern": "^#[0-9a-fA-F]{6}$",
+        "format": "regex"
+      },
+      "source": "default",
+      "group": "brand",
+      "label": "Accent — deep",
+      "control": "color",
+      "example": "#E8A400"
+    },
+    {
+      "path": "brand.colors.accentDark",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "pattern": "^#[0-9a-fA-F]{6}$",
+        "format": "regex"
+      },
+      "source": "default",
+      "group": "brand",
+      "label": "Accent — dark",
+      "help": "Accent text on light backgrounds. Must stay contrast-safe.",
+      "control": "color",
+      "example": "#8F6400"
+    },
+    {
+      "path": "brand.colors.accentLift",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "pattern": "^#[0-9a-fA-F]{6}$",
+        "format": "regex"
+      },
+      "source": "default",
+      "group": "brand",
+      "label": "Accent — gradient top",
+      "control": "color",
+      "example": "#FFD46A"
+    },
+    {
+      "path": "brand.colors.accentPress",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "pattern": "^#[0-9a-fA-F]{6}$",
+        "format": "regex"
+      },
+      "source": "default",
+      "group": "brand",
+      "label": "Accent — gradient bottom",
+      "control": "color",
+      "example": "#F0A400"
+    },
+    {
+      "path": "brand.colors.accentGlow",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "pattern": "^#[0-9a-fA-F]{6}$",
+        "format": "regex"
+      },
+      "source": "default",
+      "group": "brand",
+      "label": "Accent — glow",
+      "control": "color",
+      "example": "#FFE29A"
+    },
+    {
+      "path": "brand.colors.urgent",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "pattern": "^#[0-9a-fA-F]{6}$",
+        "format": "regex"
+      },
+      "source": "default",
+      "group": "brand",
+      "label": "Urgency",
+      "control": "color",
+      "example": "#D7261E"
+    },
+    {
+      "path": "brand.colors.urgentLight",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "pattern": "^#[0-9a-fA-F]{6}$",
+        "format": "regex"
+      },
+      "source": "default",
+      "group": "brand",
+      "label": "Urgency — gradient top",
+      "control": "color",
+      "example": "#E8382F"
+    },
+    {
+      "path": "brand.colors.urgentDark",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "pattern": "^#[0-9a-fA-F]{6}$",
+        "format": "regex"
+      },
+      "source": "default",
+      "group": "brand",
+      "label": "Urgency — gradient bottom",
+      "control": "color",
+      "example": "#B71E17"
+    },
+    {
+      "path": "brand.colors.surface",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "pattern": "^#[0-9a-fA-F]{6}$",
+        "format": "regex"
+      },
+      "source": "default",
+      "group": "brand",
+      "label": "Page background",
+      "control": "color",
+      "example": "#FFFFFF"
+    },
+    {
+      "path": "brand.colors.surfaceAlt",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "pattern": "^#[0-9a-fA-F]{6}$",
+        "format": "regex"
+      },
+      "source": "default",
+      "group": "brand",
+      "label": "Alternate band background",
+      "control": "color",
+      "example": "#F8F4EC"
+    },
+    {
+      "path": "brand.colors.ink",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "pattern": "^#[0-9a-fA-F]{6}$",
+        "format": "regex"
+      },
+      "source": "default",
+      "group": "brand",
+      "label": "Body text",
+      "control": "color",
+      "example": "#141927"
+    },
+    {
+      "path": "brand.colors.inkMuted",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "pattern": "^#[0-9a-fA-F]{6}$",
+        "format": "regex"
+      },
+      "source": "default",
+      "group": "brand",
+      "label": "Secondary text",
+      "control": "color",
+      "example": "#4A5268"
+    },
+    {
+      "path": "brand.colors.onDark",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "pattern": "^#[0-9a-fA-F]{6}$",
+        "format": "regex"
+      },
+      "source": "default",
+      "group": "brand",
+      "label": "Text on dark",
+      "control": "color",
+      "example": "#C6D4EF"
+    },
+    {
+      "path": "brand.colors.onDarkMuted",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "pattern": "^#[0-9a-fA-F]{6}$",
+        "format": "regex"
+      },
+      "source": "default",
+      "group": "brand",
+      "label": "Secondary text on dark",
+      "control": "color",
+      "example": "#8FA6D2"
+    },
+    {
+      "path": "brand.fonts.display",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "minLength": 1
+      },
+      "source": "default",
+      "group": "brand",
+      "label": "Display font stack",
+      "control": "text",
+      "example": "'Bricolage Grotesque', system-ui, sans-serif"
+    },
+    {
+      "path": "brand.fonts.body",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "minLength": 1
+      },
+      "source": "default",
+      "group": "brand",
+      "label": "Body font stack",
+      "control": "text",
+      "example": "'Instrument Sans', system-ui, sans-serif"
+    },
+    {
+      "path": "brand.fonts.mono",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "minLength": 1
+      },
+      "source": "default",
+      "group": "brand",
+      "label": "Mono font stack",
+      "control": "text",
+      "example": "'Spline Sans Mono', ui-monospace, monospace"
+    },
+    {
+      "path": "brand.fonts.googleFontsHref",
+      "type": "string",
+      "required": true,
+      "nullable": true,
+      "constraints": {
+        "format": "url"
+      },
+      "source": "default",
+      "group": "brand",
+      "label": "Google Fonts link",
+      "help": "Must load every family named above. Blank means self-hosted fonts.",
+      "control": "url",
+      "example": "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Instrument+Sans:wght@400..700&family=Spline+Sans+Mono:wght@400..600&display=swap"
+    },
+    {
+      "path": "brand.logos.nav",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "minLength": 1,
+        "rules": [
+          "Asset paths must be absolute: start with \"/\" or \"https://\". Relative paths 404 on nested routes."
+        ]
+      },
+      "source": "ask",
+      "group": "brand",
+      "label": "Header logo URL",
+      "help": "Upload to R2 and paste the public URL. For light backgrounds. Must be absolute — a relative path 404s on nested pages.",
+      "control": "url",
+      "example": "https://pub-24055549503540b0b5ff19237b87d146.r2.dev/logos/logo-nav.png"
+    },
+    {
+      "path": "brand.logos.footer",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "minLength": 1,
+        "rules": [
+          "Asset paths must be absolute: start with \"/\" or \"https://\". Relative paths 404 on nested routes."
+        ]
+      },
+      "source": "ask",
+      "group": "brand",
+      "label": "Footer / drawer logo URL",
+      "help": "The knockout (light-on-dark) version. This is also what the mobile menu uses — a missing one is why the old drawer showed bare text.",
+      "control": "url",
+      "example": "https://pub-24055549503540b0b5ff19237b87d146.r2.dev/logos/logo-footer.png"
+    },
+    {
+      "path": "brand.logos.inventory",
+      "type": "string",
+      "required": true,
+      "nullable": true,
+      "constraints": {
+        "minLength": 1,
+        "rules": [
+          "Asset paths must be absolute: start with \"/\" or \"https://\". Relative paths 404 on nested routes."
+        ]
+      },
+      "source": "ask",
+      "group": "brand",
+      "label": "Inventory card logo URL",
+      "help": "Optional. Leave blank to reuse the header logo.",
+      "control": "url",
+      "example": null
+    },
+    {
+      "path": "brand.logos.favicon",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "minLength": 1,
+        "rules": [
+          "Asset paths must be absolute: start with \"/\" or \"https://\". Relative paths 404 on nested routes."
+        ]
+      },
+      "source": "default",
+      "group": "brand",
+      "label": "Favicon URL",
+      "help": "Defaults to the template placeholder. The review step flags it if it is still the placeholder.",
+      "control": "url",
+      "example": "/brand/favicon.svg"
+    },
+    {
+      "path": "brand.logos.ogImage",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "minLength": 1,
+        "rules": [
+          "Asset paths must be absolute: start with \"/\" or \"https://\". Relative paths 404 on nested routes."
+        ]
+      },
+      "source": "default",
+      "group": "brand",
+      "label": "Share image URL",
+      "help": "What appears when someone shares the site. Defaults to the template placeholder — the review step flags it.",
+      "control": "url",
+      "example": "/brand/og-default.png"
+    },
+    {
+      "path": "brand.radius.card",
+      "type": "number",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "integer": true,
+        "min": 0,
+        "max": 48
+      },
+      "source": "default",
+      "group": "brand",
+      "label": "Card corner radius (px)",
+      "control": "number",
+      "example": 20
+    },
+    {
+      "path": "brand.radius.button",
+      "type": "number",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "integer": true,
+        "min": 0,
+        "max": 48
+      },
+      "source": "default",
+      "group": "brand",
+      "label": "Button corner radius (px)",
+      "control": "number",
+      "example": 14
+    },
+    {
+      "path": "brand.radius.pill",
+      "type": "number",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "integer": true,
+        "min": 0,
+        "max": 999
+      },
+      "source": "default",
+      "group": "brand",
+      "label": "Pill corner radius (px)",
+      "control": "number",
+      "example": 999
+    },
+    {
+      "path": "nav.items",
+      "type": "array<union>",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "minLength": 1,
+        "variants": [
+          "categories",
+          "link",
+          "external"
+        ]
+      },
+      "source": "composed",
+      "group": "nav",
+      "label": "Navigation items",
+      "help": "The generator always emits { type: 'categories' } first — that placeholder expands into one link per ENABLED category. It never writes a hardcoded category href, because the schema rejects a nav link to a category that is off. Extra links from the form are appended after it."
+    },
+    {
+      "path": "nav.primaryCta.label",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "minLength": 1
+      },
+      "source": "default",
+      "group": "nav",
+      "label": "Main button text",
+      "control": "text",
+      "example": "Shop Inventory"
+    },
+    {
+      "path": "nav.primaryCta.href",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "minLength": 1
+      },
+      "source": "default",
+      "group": "nav",
+      "label": "Main button destination",
+      "help": "One canonical destination. The old site had this pointing two different places.",
+      "control": "text",
+      "example": "/inventory"
+    },
+    {
+      "path": "nav.legalItems",
+      "type": "array<object>",
+      "required": false,
+      "nullable": false,
+      "default": [],
+      "source": "composed",
+      "group": "nav",
+      "label": "Legal strip links",
+      "help": "Bottom bar. Defaults to Privacy Policy."
+    },
+    {
+      "path": "nav.legalItems[].label",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "minLength": 1
+      },
+      "source": "default",
+      "group": "nav",
+      "label": "Legal link text",
+      "control": "text",
+      "example": "Privacy Policy"
+    },
+    {
+      "path": "nav.legalItems[].href",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "minLength": 1
+      },
+      "source": "default",
+      "group": "nav",
+      "label": "Legal link destination",
+      "control": "text",
+      "example": "/privacy-policy"
+    },
+    {
+      "path": "categories",
+      "type": "record",
+      "required": false,
+      "nullable": false,
+      "default": {},
+      "constraints": {
+        "keys": [
+          "hot-tub",
+          "swim-spa",
+          "sauna",
+          "massage-chair",
+          "cold-plunge"
+        ]
+      },
+      "source": "composed",
+      "group": "categories",
+      "label": "Product categories",
+      "help": "Opt-in. A category left unchecked has no route, no nav link, no footer link, no sitemap entry, no breadcrumb, no quiz option and no admin dropdown entry. It does not exist.",
+      "control": "checkbox"
+    },
+    {
+      "path": "categories{}.enabled",
+      "type": "boolean",
+      "required": false,
+      "nullable": false,
+      "default": false,
+      "source": "composed",
+      "group": "categories",
+      "label": "Enabled",
+      "help": "True for every checked category. The generator never writes an entry with enabled:false — it omits the key entirely."
+    },
+    {
+      "path": "categories{}.label",
+      "type": "string",
+      "required": false,
+      "nullable": true,
+      "default": null,
+      "constraints": {
+        "minLength": 1
+      },
+      "source": "ask",
+      "group": "categories",
+      "label": "Custom label",
+      "help": "Optional. Only if this client calls it something else.",
+      "control": "text",
+      "example": null
+    },
+    {
+      "path": "categories{}.blurb",
+      "type": "string",
+      "required": false,
+      "nullable": true,
+      "default": null,
+      "constraints": {
+        "minLength": 1
+      },
+      "source": "ask",
+      "group": "categories",
+      "label": "Custom blurb",
+      "help": "Optional. Falls back to the catalog description.",
+      "control": "textarea",
+      "example": null
+    },
+    {
+      "path": "categories{}.heroImage",
+      "type": "string",
+      "required": false,
+      "nullable": true,
+      "default": null,
+      "constraints": {
+        "minLength": 1,
+        "rules": [
+          "Asset paths must be absolute: start with \"/\" or \"https://\". Relative paths 404 on nested routes."
+        ]
+      },
+      "source": "ask",
+      "group": "categories",
+      "label": "Category hero image URL",
+      "help": "Optional. Absolute URL or path.",
+      "control": "url",
+      "example": null
+    },
+    {
+      "path": "categories{}.sortOrder",
+      "type": "number",
+      "required": false,
+      "nullable": false,
+      "default": 0,
+      "constraints": {
+        "integer": true
+      },
+      "source": "composed",
+      "group": "categories",
+      "label": "Sort order",
+      "help": "Derived from the order the categories were checked: 10, 20, 30…"
+    },
+    {
+      "path": "serviceAreas",
+      "type": "array<string>",
+      "required": false,
+      "nullable": false,
+      "default": [],
+      "constraints": {
+        "element": {
+          "minLength": 1
+        }
+      },
+      "source": "ask",
+      "group": "service-areas",
+      "label": "Areas served",
+      "help": "One per line. Only places the business actually serves — these become footer links and schema.org claims.",
+      "control": "repeater",
+      "example": [
+        "Lakeside",
+        "El Cajon",
+        "Santee",
+        "East County San Diego"
+      ]
+    },
+    {
+      "path": "financing.headline",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "minLength": 1
+      },
+      "source": "ask",
+      "group": "financing",
+      "label": "Financing headline",
+      "help": "Leave this and the rest of the section blank if they do not offer financing — the /financing page then does not exist at all.",
+      "control": "text",
+      "example": null
+    },
+    {
+      "path": "financing.blurb",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "minLength": 1
+      },
+      "source": "ask",
+      "group": "financing",
+      "label": "Financing summary",
+      "help": "One or two sentences.",
+      "control": "textarea",
+      "example": null
+    },
+    {
+      "path": "financing.bullets",
+      "type": "array<string>",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "minLength": 1,
+        "element": {
+          "minLength": 1
+        }
+      },
+      "source": "ask",
+      "group": "financing",
+      "label": "Financing points",
+      "help": "One per line. Only what the client has CONFIRMED. Never guess a rate or a term — a wrong number here is a Truth-in-Lending problem, not a typo.",
+      "control": "repeater",
+      "example": null
+    },
+    {
+      "path": "financing.lenderName",
+      "type": "string",
+      "required": false,
+      "nullable": true,
+      "default": null,
+      "constraints": {
+        "minLength": 1
+      },
+      "source": "ask",
+      "group": "financing",
+      "label": "Lender name",
+      "help": "Who actually underwrites it. Optional.",
+      "control": "text",
+      "example": null
+    },
+    {
+      "path": "financing.applyUrl",
+      "type": "string",
+      "required": false,
+      "nullable": true,
+      "default": null,
+      "constraints": {
+        "format": "url"
+      },
+      "source": "ask",
+      "group": "financing",
+      "label": "Application link",
+      "help": "The lender's application page, if there is one. Optional.",
+      "control": "url",
+      "example": null
+    },
+    {
+      "path": "financing.disclaimer",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "minLength": 1
+      },
+      "source": "ask",
+      "group": "financing",
+      "label": "Financing disclaimer",
+      "help": "REQUIRED if financing is offered. The qualifying terms — \"on approved credit\", who the offer applies to, what expires when. An offer stated without its terms is the claim regulators care about.",
+      "control": "textarea",
+      "example": null
+    },
+    {
+      "path": "display.showPrice",
+      "type": "boolean",
+      "required": false,
+      "nullable": false,
+      "default": true,
+      "source": "default",
+      "group": "financing",
+      "label": "Show cash prices",
+      "help": "Defaults on. Product status still decides whether an individual price may be shown.",
+      "control": "checkbox",
+      "example": true
+    },
+    {
+      "path": "display.showMonthly",
+      "type": "boolean",
+      "required": false,
+      "nullable": false,
+      "default": false,
+      "source": "default",
+      "group": "financing",
+      "label": "Show monthly payments",
+      "help": "Defaults off. The schema refuses to enable this unless complete financing terms are configured.",
+      "control": "checkbox",
+      "example": false
+    },
+    {
+      "path": "homepage.title",
+      "type": "string",
+      "required": false,
+      "nullable": true,
+      "default": null,
+      "constraints": {
+        "minLength": 1
+      },
+      "source": "default",
+      "group": "homepage",
+      "label": "Homepage title override",
+      "help": "Leave blank. Null falls back to the one-line description, so there is no second copy of it.",
+      "control": "text",
+      "example": null
+    },
+    {
+      "path": "homepage.description",
+      "type": "string",
+      "required": false,
+      "nullable": true,
+      "default": null,
+      "constraints": {
+        "minLength": 1
+      },
+      "source": "default",
+      "group": "homepage",
+      "label": "Homepage meta description override",
+      "help": "Leave blank — falls back to the one-line description.",
+      "control": "textarea",
+      "example": null
+    },
+    {
+      "path": "homepage.sections",
+      "type": "array<union>",
+      "required": false,
+      "nullable": false,
+      "default": [],
+      "constraints": {
+        "variants": [
+          "announcement",
+          "hero",
+          "stats",
+          "offercard",
+          "categories",
+          "products",
+          "imagecards",
+          "benefits",
+          "gallery",
+          "reviews",
+          "comparison",
+          "promise",
+          "splitcards",
+          "steps",
+          "faq",
+          "ctaband",
+          "cta",
+          "trust",
+          "bignumber"
+        ]
+      },
+      "source": "composed",
+      "group": "homepage",
+      "label": "Homepage sections",
+      "help": "The generator writes a default arrangement that needs no copy: the hero headline falls back to the tagline, the category row builds itself from the checked categories, and the product row reads live inventory. Reviews, stats, a comparison table and an FAQ are added afterwards when the client supplies real material — they cannot be invented."
+    },
+    {
+      "path": "homepage.disclosures",
+      "type": "array<string>",
+      "required": false,
+      "nullable": false,
+      "default": [],
+      "constraints": {
+        "element": {
+          "minLength": 1
+        }
+      },
+      "source": "composed",
+      "group": "homepage",
+      "label": "Homepage small print",
+      "help": "Required only if a homepage section makes a superlative claim. The build fails without it in that case."
+    },
+    {
+      "path": "integrations.d1BindingName",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "minLength": 1
+      },
+      "source": "fixed",
+      "group": "integrations",
+      "label": "D1 binding name",
+      "help": "Always DB. Set in wrangler.toml at deploy time.",
+      "example": "DB"
+    },
+    {
+      "path": "integrations.r2BindingName",
+      "type": "string",
+      "required": true,
+      "nullable": false,
+      "constraints": {
+        "minLength": 1
+      },
+      "source": "fixed",
+      "group": "integrations",
+      "label": "R2 binding name",
+      "help": "Always PRODUCT_IMAGES.",
+      "example": "PRODUCT_IMAGES"
+    },
+    {
+      "path": "integrations.ghl.enabled",
+      "type": "boolean",
+      "required": true,
+      "nullable": false,
+      "source": "ask",
+      "group": "integrations",
+      "label": "Send leads to GoHighLevel",
+      "help": "On/off only. The API key and Location ID are wrangler secrets and never enter this config or git.",
+      "control": "checkbox",
+      "example": false
+    },
+    {
+      "path": "integrations.meta.enabled",
+      "type": "boolean",
+      "required": true,
+      "nullable": false,
+      "source": "ask",
+      "group": "integrations",
+      "label": "Meta Conversions API",
+      "help": "On/off only. Pixel ID and CAPI token are wrangler secrets.",
+      "control": "checkbox",
+      "example": false
+    },
+    {
+      "path": "integrations.zaraz.enabled",
+      "type": "boolean",
+      "required": true,
+      "nullable": false,
+      "source": "ask",
+      "group": "integrations",
+      "label": "Cloudflare Zaraz",
+      "help": "Browser-side tagging. Configured in the Cloudflare dashboard, not here.",
+      "control": "checkbox",
+      "example": false
+    },
+    {
+      "path": "integrations.sentry.enabled",
+      "type": "boolean",
+      "required": true,
+      "nullable": false,
+      "source": "ask",
+      "group": "integrations",
+      "label": "Sentry error tracking",
+      "control": "checkbox",
+      "example": false
+    }
+  ]
+}

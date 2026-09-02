@@ -1,0 +1,310 @@
+---
+/**
+ * THE FOOTER. Singular.
+ *
+ * What the copied footers used to get wrong, and why each is now impossible:
+ *
+ *   Admin login link visible to customers
+ *     → there is no admin markup in this file. Not conditional, not
+ *       commented out — absent. A link that does not exist cannot ship.
+ *       (Phase 9's gate greps the built output as a second net.)
+ *
+ *   Facebook href="#" (dead), Instagram missing entirely
+ *     → icons render from `derived.socialLinks`, which only contains
+ *       platforms that have a URL in config. There is no code path that
+ *       emits a link with a placeholder href.
+ *
+ *   Social slot on only 3 of 5 pages; CSS living in inventory.css
+ *     → one component, styles attached to it.
+ *
+ *   Map slot empty because `mapEmbedUrl` was never set
+ *     → the embed URL is derived from the address. There is no field to
+ *       leave blank.
+ *
+ *   Five different labels for the same contact link
+ *     → footer links come from the same nav array the header uses.
+ *
+ *   "1979" in the copyright while the logo said 1978
+ *     → the year comes from `foundedYear`, once.
+ *
+ * Styling is an exact port of the live `.site-footer` block: navy gradient,
+ * mono gold column headings at .66rem/.2em, 42px social circles, 210px map,
+ * pill service areas. No colour literals.
+ */
+import { site, derived } from '../config';
+import SocialIcon from './SocialIcon.astro';
+
+const { footerNav, socialLinks, mapEmbedUrl, directionsUrl, telHref, phoneDisplay, addressLines, hoursDisplay, copyrightLine } =
+  derived;
+---
+
+<footer class="site-footer">
+  <div class="gold-hairline"></div>
+
+  <div class="footer-grid">
+    <div>
+      {/* Knockout logo — this footer sits on near-black navy. */}
+      <img class="footer-logo" src={site.brand.logos.footer} alt={site.identity.name} height="48" decoding="async" />
+
+      <p class="footer-tagline">{site.identity.tagline}</p>
+
+      {/* Derived from the address. Cannot be blank. */}
+      <div class="footer-map">
+        <iframe
+          src={mapEmbedUrl}
+          title={`Map to ${site.identity.name}`}
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+
+      {
+        socialLinks.length > 0 && (
+          <div class="footer-social">
+            {socialLinks.map((s) => (
+              <a href={s.url} target="_blank" rel="noopener" aria-label={s.label}>
+                <SocialIcon name={s.key} />
+              </a>
+            ))}
+          </div>
+        )
+      }
+    </div>
+
+    <div>
+      <h2 class="footer-h">Quick links</h2>
+      <ul class="footer-links">
+        {
+          footerNav.map((item) => (
+            <li>
+              <a href={item.href} {...(item.external ? { target: '_blank', rel: 'noopener' } : {})}>
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+
+    <div>
+      <h2 class="footer-h">Visit</h2>
+      <address class="footer-address">
+        {addressLines.map((line) => <span>{line}</span>)}
+      </address>
+      {/* Always a tel: link. */}
+      <a class="footer-phone" href={telHref} data-call-source="footer_phone">{phoneDisplay}</a>
+      <a class="footer-directions" href={directionsUrl} target="_blank" rel="noopener">Get directions</a>
+      {/* Schema guarantees at least one range, so there is no empty state
+          to design around — and no page can show "hours: TBD". */}
+      <ul class="footer-hours">
+        {hoursDisplay.map((h) => (
+          <li>
+            <span>{h.days}</span> {h.time}
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    <div>
+      {
+        site.serviceAreas.length > 0 && (
+          <>
+            <h2 class="footer-h">Service area</h2>
+            <div class="areas">
+              {site.serviceAreas.map((area) => (
+                <span>{area}</span>
+              ))}
+            </div>
+          </>
+        )
+      }
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <span>{copyrightLine}</span>
+    {
+      site.nav.legalItems.length > 0 && (
+        <span class="footer-legal">
+          {site.nav.legalItems.map((item, i) => (
+            <>
+              {i > 0 && <span aria-hidden="true"> · </span>}
+              <a href={item.href}>{item.label}</a>
+            </>
+          ))}
+        </span>
+      )
+    }
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    background: linear-gradient(180deg, var(--brand-deep), var(--brand-abyss));
+    color: var(--brand-on-dark);
+    font-size: 0.9rem;
+  }
+
+  .footer-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 32px;
+    max-width: var(--wrap);
+    margin: 0 auto;
+    padding: 56px 20px 36px;
+  }
+  @media (min-width: 900px) {
+    .footer-grid {
+      grid-template-columns: 1.3fr 0.7fr 0.9fr 1fr;
+      gap: 40px;
+      padding: 64px 24px 44px;
+    }
+  }
+
+  .footer-logo {
+    height: 48px;
+    width: auto;
+    display: block;
+    margin-bottom: 8px;
+  }
+  .footer-tagline {
+    margin-top: 16px;
+    font-size: 0.87rem;
+    line-height: 1.6;
+  }
+
+  .footer-h {
+    margin-bottom: 16px;
+    font-family: var(--brand-font-mono);
+    font-size: 0.66rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brand-accent-soft);
+  }
+
+  .site-footer a {
+    color: var(--brand-on-dark);
+    display: inline-block;
+    min-height: 24px;
+    line-height: 24px;
+  }
+  .site-footer a:hover {
+    color: #fff;
+    text-decoration: underline;
+  }
+
+  .footer-links,
+  .footer-hours {
+    list-style: none;
+  }
+  .footer-address {
+    font-style: normal;
+    display: flex;
+    flex-direction: column;
+  }
+  .footer-phone {
+    font-family: var(--brand-font-display);
+    font-size: 1.16rem;
+    font-weight: 700;
+    color: var(--brand-accent);
+    margin-top: 8px;
+  }
+  .footer-phone:hover {
+    color: var(--brand-accent-soft);
+  }
+  .footer-directions {
+    display: block;
+    font-size: 0.82rem;
+    text-decoration: underline;
+  }
+  .footer-hours {
+    margin-top: 12px;
+    font-size: 0.84rem;
+  }
+  .footer-hours span {
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .footer-map {
+    margin-top: 18px;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgb(255 255 255 / 0.14);
+    box-shadow: 0 20px 44px -24px rgb(0 0 0 / 0.6);
+  }
+  .footer-map iframe {
+    width: 100%;
+    height: 210px;
+    border: 0;
+    display: block;
+  }
+
+  .footer-social {
+    margin-top: 16px;
+    display: flex;
+    gap: 10px;
+  }
+  .footer-social a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid rgb(255 255 255 / 0.2);
+    color: var(--brand-on-dark);
+    transition:
+      border-color 0.25s,
+      color 0.25s,
+      background 0.25s;
+  }
+  .footer-social a:hover {
+    border-color: var(--brand-accent);
+    color: var(--brand-accent-soft);
+    background: rgb(var(--brand-accent-rgb) / 0.07);
+  }
+
+  .areas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .areas span {
+    font-size: 0.76rem;
+    border: 1px solid rgb(255 255 255 / 0.18);
+    border-radius: var(--brand-radius-pill);
+    padding: 8px 14px;
+    min-height: 34px;
+    display: inline-flex;
+    align-items: center;
+    transition:
+      border-color 0.25s,
+      color 0.25s,
+      background 0.25s;
+  }
+  .areas span:hover {
+    border-color: var(--brand-accent);
+    color: #fff;
+    background: rgb(var(--brand-accent-rgb) / 0.07);
+  }
+
+  .footer-bottom {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: var(--wrap);
+    margin: 0 auto;
+    border-top: 1px solid rgb(255 255 255 / 0.1);
+    padding: 20px;
+    font-size: 0.78rem;
+    color: var(--brand-on-dark-muted);
+  }
+  @media (min-width: 900px) {
+    .footer-bottom {
+      flex-direction: row;
+      justify-content: space-between;
+      padding: 20px 24px;
+    }
+  }
+</style>

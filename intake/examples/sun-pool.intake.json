@@ -1,0 +1,73 @@
+{
+  "_comment": "Sun Pool & Spa Supply — the reference client, expressed as intake answers. Every value here is a real fact taken from clients/sun-pool.config.ts. Fields left null are unverified and deliberately not invented.",
+  "intakeVersion": 1,
+  "clientKey": "sun-pool",
+
+  "business": {
+    "name": "Sun Pool & Spa Supply",
+    "shortName": "Sun Pool",
+    "foundedYear": 1978,
+    "tagline": "The best hot tub and swim spa store in San Diego County. Real units on the floor.",
+    "siteUrl": "https://sunpoolandspasupply.com"
+  },
+
+  "contact": {
+    "phone": "+16195618587",
+    "phoneDisplayOverride": null,
+    "smsPhone": null,
+    "email": null
+  },
+
+  "location": {
+    "street": "12473 Woodside Ave",
+    "street2": "Suite C",
+    "city": "Lakeside",
+    "region": "CA",
+    "postalCode": "92040",
+    "country": "US",
+    "latitude": 32.857086,
+    "longitude": -116.924479,
+    "googlePlaceId": null
+  },
+
+  "hours": [
+    { "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], "opens": "09:30", "closes": "17:00" },
+    { "days": ["Saturday"], "opens": "09:00", "closes": "17:00" },
+    { "days": ["Sunday"], "opens": "10:00", "closes": "14:00" }
+  ],
+
+  "social": {
+    "facebook": null,
+    "instagram": null,
+    "youtube": null,
+    "tiktok": null,
+    "x": null,
+    "linkedin": null,
+    "googleBusiness": null
+  },
+
+  "categories": [{ "slug": "hot-tub" }, { "slug": "swim-spa" }],
+
+  "serviceAreas": ["Lakeside", "El Cajon", "Santee", "East County San Diego"],
+
+  "brand": {
+    "logos": {
+      "nav": "https://pub-24055549503540b0b5ff19237b87d146.r2.dev/logos/logo-nav.png",
+      "footer": "https://pub-24055549503540b0b5ff19237b87d146.r2.dev/logos/logo-footer.png",
+      "inventory": "https://pub-24055549503540b0b5ff19237b87d146.r2.dev/logos/logo-inventory.png",
+      "favicon": null,
+      "ogImage": null
+    }
+  },
+
+  "nav": {
+    "extraLinks": [
+      { "label": "Find Your Match", "href": "/find-your-match" },
+      { "label": "Inventory", "href": "/inventory" },
+      { "label": "Financing", "href": "/financing" },
+      { "label": "Visit Us", "href": "/visit-us" }
+    ]
+  },
+
+  "integrations": { "ghl": true, "meta": true, "zaraz": true, "sentry": true }
+}

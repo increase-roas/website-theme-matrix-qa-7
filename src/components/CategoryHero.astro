@@ -1,0 +1,197 @@
+---
+/**
+ * CATEGORY HERO — exact port of the live `.cat-hero`.
+ *
+ * min(72vh, 640px), bottom-aligned content, photo under three stacked
+ * gradients, two drifting steam blobs, and the 5.5s gold shimmer hairline on
+ * the bottom edge.
+ *
+ * The hero image comes from config (`categories.<slug>.heroImage`) where the
+ * schema already refuses a relative path, and is re-checked here. With no
+ * image the gradient stack alone still reads as a finished hero — which is
+ * why the live category pages looked "fine" while their photos were 404ing,
+ * and why that bug survived so long.
+ */
+import { toAbsoluteAsset } from '../lib/assets';
+
+interface Props {
+  eyebrow?: string;
+  title: string;
+  subtitle?: string;
+  image?: string | null;
+  count?: number;
+}
+
+const { eyebrow, title, subtitle, image, count } = Astro.props;
+const heroImage = toAbsoluteAsset(image);
+---
+
+<section class="cat-hero on-dark">
+  {heroImage && <img class="cat-hero-img" src={heroImage} alt="" aria-hidden="true" fetchpriority="high" />}
+  <div class="cat-hero-bg"></div>
+  <div class="cat-hero-steam cat-hero-steam-1"></div>
+  <div class="cat-hero-steam cat-hero-steam-2"></div>
+
+  <div class="cat-hero-inner">
+    {eyebrow && <p class="eyebrow">{eyebrow}</p>}
+    <h1 class="cat-title">{title}</h1>
+    {subtitle && <p class="cat-sub">{subtitle}</p>}
+    {
+      count !== undefined && (
+        <p class="cat-count">
+          <strong>{count}</strong> {count === 1 ? 'unit' : 'units'} on the floor
+        </p>
+      )
+    }
+    <slot />
+  </div>
+</section>
+
+<style>
+  .cat-hero {
+    position: relative;
+    color: #fff;
+    background: var(--brand-abyss);
+    overflow: hidden;
+    min-height: min(72vh, 640px);
+    display: flex;
+    align-items: flex-end;
+  }
+
+  /* Gold shimmer hairline on the hero's bottom edge — 5.5s, same as theme. */
+  .cat-hero::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    z-index: 3;
+    background:
+      linear-gradient(90deg, transparent, var(--brand-accent-lift) 50%, transparent) no-repeat,
+      rgb(var(--brand-accent-rgb) / 0.28);
+    background-size: 38% 100%;
+    animation: cat-sweep 5.5s ease-in-out infinite;
+  }
+  @keyframes cat-sweep {
+    0% {
+      background-position: -80% 0;
+    }
+    55%,
+    100% {
+      background-position: 180% 0;
+    }
+  }
+
+  .cat-hero-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    z-index: 0;
+    filter: saturate(0.92) contrast(1.05);
+  }
+
+  .cat-hero-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background:
+      linear-gradient(
+        180deg,
+        rgb(var(--brand-abyss-rgb) / 0.55) 0%,
+        rgb(var(--brand-night-rgb) / 0.42) 38%,
+        rgb(var(--brand-abyss-rgb) / 0.92) 100%
+      ),
+      radial-gradient(900px 480px at 78% -8%, rgb(var(--brand-accent-rgb) / 0.14), transparent 62%),
+      radial-gradient(800px 500px at 12% 40%, rgb(var(--brand-primary-rgb) / 0.55), transparent 62%);
+  }
+
+  .cat-hero-steam {
+    position: absolute;
+    z-index: 1;
+    border-radius: 9999px;
+    filter: blur(72px);
+    pointer-events: none;
+    max-width: 70vw;
+  }
+  .cat-hero-steam-1 {
+    width: min(480px, 70vw);
+    height: 300px;
+    left: -10%;
+    bottom: -18%;
+    background: rgb(var(--brand-primary-rgb) / 0.45);
+    animation: cat-drift1 16s ease-in-out infinite;
+  }
+  .cat-hero-steam-2 {
+    width: min(420px, 65vw);
+    height: 280px;
+    right: -8%;
+    top: -20%;
+    background: rgb(var(--brand-accent-rgb) / 0.12);
+    animation: cat-drift2 20s ease-in-out infinite;
+  }
+  @keyframes cat-drift1 {
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+    }
+    50% {
+      transform: translate(40px, -28px) scale(1.12);
+    }
+  }
+  @keyframes cat-drift2 {
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+    }
+    50% {
+      transform: translate(-34px, 22px) scale(1.08);
+    }
+  }
+
+  .cat-hero-inner {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    max-width: var(--wrap);
+    margin: 0 auto;
+    padding: 56px 20px 48px;
+    box-sizing: border-box;
+  }
+  @media (min-width: 1024px) {
+    .cat-hero-inner {
+      padding: 96px 24px 80px;
+    }
+  }
+
+  .cat-title {
+    font-size: clamp(2.1rem, 6vw, 3.6rem);
+    letter-spacing: -0.02em;
+    line-height: 1.06;
+    color: #fff;
+    max-width: 16ch;
+  }
+  .cat-sub {
+    margin-top: 14px;
+    max-width: 56ch;
+    font-size: 1.02rem;
+    line-height: 1.6;
+    color: var(--brand-on-dark);
+  }
+  .cat-count {
+    margin-top: 18px;
+    font-family: var(--brand-font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brand-accent-soft);
+  }
+  .cat-count strong {
+    font-family: var(--brand-font-display);
+    font-size: 1.1rem;
+    color: #fff;
+  }
+</style>

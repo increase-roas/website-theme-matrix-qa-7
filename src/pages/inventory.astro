@@ -1,0 +1,195 @@
+---
+/**
+ * CROSS-CATEGORY INVENTORY — everything on the floor, in one list.
+ *
+ * This is the destination of `nav.primaryCta`. On the live site "Shop
+ * Inventory" pointed at /book/ from the homepage and /inventory.html from
+ * everywhere else; here the href exists once in config and this page is what
+ * it resolves to.
+ *
+ * Being a static route, this file takes priority over [category]/index.astro,
+ * so "inventory" is never mistaken for a category segment.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProductCard from '../components/ProductCard.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { site, derived, enabledCategories } from '../config';
+import { getDb, listProducts, countProductsByCategory, inventoryStatus } from '../lib/db';
+import { buildItemList } from '../lib/seo';
+
+const db = getDb();
+const dbStatus = inventoryStatus(db);
+const products = db ? await listProducts(db) : [];
+const counts = db ? await countProductsByCategory(db) : {};
+const itemList = buildItemList(products, `Inventory at ${site.identity.name}`);
+---
+
+<BaseLayout
+  title="Inventory"
+  description={`Every unit currently on the floor at ${site.identity.name} in ${site.address.city}, ${site.address.region}.`}
+  path="/inventory"
+  jsonLd={itemList}
+>
+  <section class="inv-head">
+    <div class="wrap">
+      <p class="eyebrow">In stock · no waiting</p>
+      <h1>What's on the floor right now</h1>
+      <p class="inv-sub">
+        Real units you can see and touch in {site.address.city}. Call
+        <a class="inv-tel" href={derived.telHref}>{derived.phoneDisplay}</a> and we'll tell you
+        what's arriving next.
+      </p>
+
+      {
+        enabledCategories.length > 1 && (
+          <nav class="inv-jump" aria-label="Browse by category">
+            {enabledCategories.map((c) => (
+              <a href={c.href}>
+                {c.label}
+                <span>{counts[c.slug] ?? 0}</span>
+              </a>
+            ))}
+          </nav>
+        )
+      }
+    </div>
+  </section>
+
+  <div class="wrap">
+    <Breadcrumbs trail={[{ label: 'Inventory', href: '/inventory' }]} />
+  </div>
+
+  <section class="listing wrap">
+    {
+      !dbStatus.configured ? (
+        <div class="empty">
+          <h2>Inventory isn't connected yet</h2>
+          <p>{dbStatus.message}</p>
+        </div>
+      ) : products.length === 0 ? (
+        <div class="empty">
+          <h2>Nothing listed at the moment</h2>
+          <p>Stock moves fast. Give us a call and we'll tell you what's on the way.</p>
+          <p class="empty-actions">
+            <a class="btn btn-gold" href={derived.telHref}>
+              Call {derived.phoneDisplay}
+            </a>
+          </p>
+        </div>
+      ) : (
+        <div class="inv-grid">
+          {products.map((product) => (
+            <ProductCard product={product} />
+          ))}
+        </div>
+      )
+    }
+  </section>
+</BaseLayout>
+
+<style>
+  .inv-head {
+    background: linear-gradient(180deg, var(--brand-night), var(--brand-abyss));
+    color: #fff;
+    padding: 56px 0 48px;
+  }
+  @media (min-width: 900px) {
+    .inv-head {
+      padding: 76px 0 60px;
+    }
+  }
+  .inv-head .eyebrow {
+    color: var(--brand-accent-soft);
+  }
+  .inv-head h1 {
+    font-size: clamp(2rem, 5.4vw, 3.2rem);
+    letter-spacing: -0.02em;
+    line-height: 1.08;
+  }
+  .inv-sub {
+    margin-top: 14px;
+    max-width: 58ch;
+    color: var(--brand-on-dark);
+    line-height: 1.6;
+  }
+
+  .inv-tel {
+    color: var(--brand-accent);
+    font-weight: 700;
+    text-decoration: underline;
+  }
+  .inv-tel:hover {
+    color: var(--brand-accent-soft);
+  }
+
+  .inv-jump {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 26px;
+  }
+  .inv-jump a {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid rgb(255 255 255 / 0.2);
+    border-radius: var(--brand-radius-pill);
+    padding: 10px 16px;
+    font-family: var(--brand-font-display);
+    font-weight: 700;
+    font-size: 0.86rem;
+    color: #fff;
+    transition:
+      border-color 0.25s,
+      background 0.25s;
+  }
+  .inv-jump a:hover {
+    border-color: var(--brand-accent);
+    background: rgb(var(--brand-accent-rgb) / 0.08);
+  }
+  .inv-jump span {
+    font-family: var(--brand-font-mono);
+    font-size: 0.66rem;
+    color: var(--brand-accent-soft);
+  }
+
+  .listing {
+    padding: 28px 20px 72px;
+  }
+  @media (min-width: 900px) {
+    .listing {
+      padding: 32px 24px 88px;
+    }
+  }
+  .inv-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+  @media (min-width: 901px) {
+    .inv-grid {
+      gap: 20px;
+    }
+  }
+
+  .empty {
+    text-align: center;
+    padding: 56px 24px;
+    background: var(--brand-surface);
+    border: 1px solid var(--brand-line);
+    border-radius: var(--brand-radius-card);
+  }
+  .empty h2 {
+    font-size: 1.5rem;
+    color: var(--brand-deep);
+  }
+  .empty p {
+    margin-top: 10px;
+    color: var(--brand-ink-muted);
+    max-width: 52ch;
+    margin-inline: auto;
+  }
+  .empty-actions {
+    margin-top: 22px;
+  }
+</style>

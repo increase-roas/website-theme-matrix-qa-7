@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": 1,
+  "templateKey": "htl-astro-website",
+  "name": "HTL Astro Website",
+  "repo": "increaseroasir/32-htl-website-template-astrobuild",
+  "defaultBranch": "main",
+  "type": "website",
+  "framework": "astro",
+  "active": true,
+  "configPath": "src/config/client.config.ts",
+  "workflow": "deploy.yml",
+  "bindings": {
+    "d1": {
+      "binding": "DB"
+    },
+    "r2": {
+      "binding": "PRODUCT_IMAGES",
+      "public": true
+    }
+  },
+  "runtimeSecrets": {
+    "required": [
+      "ADMIN_PASSWORD",
+      "ADMIN_SESSION_SECRET"
+    ],
+    "conditional": {
+      "ghl": [
+        "GHL_API_KEY",
+        "GHL_LOCATION_ID"
+      ],
+      "meta": [
+        "META_PIXEL_ID",
+        "META_CAPI_ACCESS_TOKEN",
+        "STAGE_WEBHOOK_SECRET"
+      ]
+    }
+  }
+}

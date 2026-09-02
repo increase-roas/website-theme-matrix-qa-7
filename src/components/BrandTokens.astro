@@ -1,0 +1,66 @@
+---
+/**
+ * Writes the client's brand values into the document as CSS custom
+ * properties, at BUILD time, straight from client.config.ts.
+ *
+ * This component is the ONLY bridge between the config and the stylesheet.
+ * Because theme.css and global.css contain no literal colour values, and no
+ * component contains a hex code, the entire visual identity of the site is
+ * decided by the `brand` block of one config file.
+ *
+ * Two forms of every colour are emitted:
+ *   --brand-accent      #FFB81C          for plain colour use
+ *   --brand-accent-rgb  255 184 28       for rgb(var(--x-rgb) / .5)
+ *
+ * The RGB triplet exists because the ported design uses brand colours at
+ * many alphas — the 12% navy hairline, the 50% navy steam blob, the 13% gold
+ * glow, every shadow. Without it those would have to be hard-coded rgba()
+ * literals in the stylesheet, which is exactly the drift this template
+ * exists to prevent. With it, an alpha variant still reads from config.
+ *
+ * `--brand-line` is DERIVED, not configured: a hairline is `deep` at 12%,
+ * not a separate colour that could fall out of step with it.
+ */
+import { site } from '../config';
+
+const c = site.brand.colors;
+const f = site.brand.fonts;
+const r = site.brand.radius;
+
+/** "#16469B" → "22 70 155" (space-separated, for rgb(... / alpha) syntax) */
+function toRgbTriplet(hex: string): string {
+  const h = hex.replace('#', '');
+  const int = Number.parseInt(h, 16);
+  // eslint-disable-next-line no-bitwise
+  return `${(int >> 16) & 255} ${(int >> 8) & 255} ${int & 255}`;
+}
+
+/** camelCase token name → kebab-case CSS custom property name. */
+function toKebab(name: string): string {
+  return name.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`);
+}
+
+const declarations: string[] = [];
+
+for (const [name, hex] of Object.entries(c)) {
+  const key = toKebab(name);
+  declarations.push(`--brand-${key}:${hex}`);
+  declarations.push(`--brand-${key}-rgb:${toRgbTriplet(hex)}`);
+}
+
+// Derived hairline — one colour at an opacity, never a second token.
+declarations.push(`--brand-line:rgb(${toRgbTriplet(c.deep)} / .12)`);
+declarations.push(`--brand-line-strong:rgb(${toRgbTriplet(c.deep)} / .2)`);
+
+declarations.push(`--brand-font-display:${f.display}`);
+declarations.push(`--brand-font-body:${f.body}`);
+declarations.push(`--brand-font-mono:${f.mono}`);
+
+declarations.push(`--brand-radius-card:${r.card}px`);
+declarations.push(`--brand-radius-button:${r.button}px`);
+declarations.push(`--brand-radius-pill:${r.pill}px`);
+
+const css = `:root{${declarations.join(';')}}`;
+---
+
+<style is:inline set:html={css}></style>

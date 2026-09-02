@@ -1,0 +1,46 @@
+@import 'tailwindcss';
+@import './theme.css';
+
+/**
+ * BRAND TOKEN BRIDGE
+ *
+ * Tailwind utility names map to CSS custom properties. The VALUES of those
+ * properties are written into the page at build time by <BrandTokens />,
+ * which reads them from client.config.ts.
+ *
+ * There is deliberately not a single hex code in this file or in theme.css.
+ * A colour value has exactly one home: the `brand.colors` block of the
+ * active client config.
+ */
+@theme {
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-primary-mid: var(--brand-primary-mid);
+  --color-brand-deep: var(--brand-deep);
+  --color-brand-night: var(--brand-night);
+  --color-brand-abyss: var(--brand-abyss);
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-accent-soft: var(--brand-accent-soft);
+  --color-brand-accent-deep: var(--brand-accent-deep);
+  --color-brand-accent-dark: var(--brand-accent-dark);
+  --color-brand-accent-lift: var(--brand-accent-lift);
+  --color-brand-accent-press: var(--brand-accent-press);
+  --color-brand-accent-glow: var(--brand-accent-glow);
+  --color-brand-urgent: var(--brand-urgent);
+  --color-brand-urgent-light: var(--brand-urgent-light);
+  --color-brand-urgent-dark: var(--brand-urgent-dark);
+  --color-brand-surface: var(--brand-surface);
+  --color-brand-surface-alt: var(--brand-surface-alt);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-ink-muted: var(--brand-ink-muted);
+  --color-brand-on-dark: var(--brand-on-dark);
+  --color-brand-on-dark-muted: var(--brand-on-dark-muted);
+  --color-brand-line: var(--brand-line);
+
+  --font-display: var(--brand-font-display);
+  --font-body: var(--brand-font-body);
+  --font-mono: var(--brand-font-mono);
+
+  --radius-card: var(--brand-radius-card);
+  --radius-button: var(--brand-radius-button);
+  --radius-pill: var(--brand-radius-pill);
+}

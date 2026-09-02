@@ -1,0 +1,50 @@
+{
+  "name": "32-htl-website-template",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Reusable hot tub / spa store website template. One config file drives every client site.",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "wrangler dev",
+    "check": "astro check",
+    "client:use": "node scripts/use-client.mjs",
+    "db:apply:local": "wrangler d1 execute DB --local --file=./db/schema.sql",
+    "db:apply:remote": "wrangler d1 execute DB --remote --file=./db/schema.sql",
+    "db:seed:local": "wrangler d1 execute DB --local --file=./db/seed.example.sql",
+    "gate": "node scripts/gate.mjs",
+    "gate:fast": "node scripts/gate.mjs --no-render",
+    "gate:template": "node scripts/template-gate.mjs",
+    "gate:test": "node scripts/gate.test.mjs",
+    "deploy": "npm run build && npm run gate && wrangler deploy"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "13.7.0",
+    "@astrojs/react": "5.0.7",
+    "@astrojs/sitemap": "3.7.3",
+    "@nanostores/react": "^1.1.0",
+    "@tailwindcss/vite": "4.3.3",
+    "astro": "6.4.8",
+    "nanostores": "^1.4.2",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "tailwindcss": "4.3.3",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "@cloudflare/workers-types": "5.20260809.1",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
+    "typescript": "5.9.3",
+    "vite": "7.3.6",
+    "wrangler": "4.120.0"
+  },
+  "engines": {
+    "node": ">=20.10.0"
+  },
+  "overrides": {
+    "vite": "7.3.6"
+  }
+}

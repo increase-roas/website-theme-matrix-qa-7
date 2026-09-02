@@ -1,0 +1,412 @@
+---
+/**
+ * PRODUCT CARD — exact port of the live `.inv-card`.
+ *
+ * Vertical with a 4:3 image up to 900px; horizontal with a 42%-wide square
+ * image from 901px, exactly as the live inventory list behaves.
+ *
+ * Two guardrails live in here rather than in the pages that use it:
+ *
+ *   1. The image is run through toAbsoluteAsset(). A relative path from the
+ *      admin panel renders the gradient placeholder instead of a broken
+ *      image — the category-hero 404 made impossible for product photos.
+ *
+ *   2. Every price string comes from lib/format.ts. The card cannot invent
+ *      its own currency formatting, so the listing and the detail page
+ *      cannot disagree about what a number looks like.
+ */
+import type { Product } from '../lib/db';
+import { assetOrWarn } from '../lib/assets';
+import { site } from '../config';
+import { pricingFor, statusLabel, isMutedStatus, ASK_FOR_PRICE } from '../lib/format';
+
+interface Props {
+  product: Product;
+  /** Override the financing destination. Rarely needed. */
+  financingHref?: string;
+}
+
+/**
+ * The financing link used to default to '/financing' unconditionally, which
+ * meant every card on every listing page linked to a page that only exists
+ * when the client has configured financing. One config value now decides both
+ * whether the page exists and whether anything links to it — there is no way
+ * for the two to disagree.
+ */
+const { product, financingHref } = Astro.props;
+const financingLink = financingHref ?? (site.financing ? '/financing' : null);
+
+const image = assetOrWarn(product.primaryImage, `product "${product.slug}"`);
+const { cash, monthly, askForPrice } = pricingFor(product);
+const badge = product.promoLabel || statusLabel(product.status, product.quantity);
+const muted = isMutedStatus(product.status);
+const href = `${product.categoryHref}/${product.slug}`;
+
+// Up to three quick facts render as the pill row, matching the live card.
+//
+// The live design assumes every product has three. A client's product with
+// none left a visible hole, so the row falls back to facts already true of
+// this product — its category and its availability. Nothing is invented, and
+// the styling is unchanged; only the data source differs.
+const fallbackPills = [product.categoryLabel, statusLabel(product.status, product.quantity)].filter(
+  (v): v is string => Boolean(v),
+);
+const pills = product.quickFacts.length > 0 ? product.quickFacts.slice(0, 3) : fallbackPills;
+---
+
+<article class:list={['inv-card', muted && 'is-muted']}>
+  <a class="inv-card-img" href={href} aria-label={product.inventoryName}>
+    {image && <img src={image} alt={product.inventoryName} loading="lazy" decoding="async" />}
+    {
+      badge && (
+        <span class:list={['product-tag', muted && 'product-tag-dark']}>{badge}</span>
+      )
+    }
+  </a>
+
+  <div class="inv-card-body">
+    <div class="inv-card-top">
+      <h3 class="inv-card-name">
+        <a href={href}>{product.inventoryName}</a>
+      </h3>
+      <hr class="inv-card-divider" />
+
+      {
+        pills.length > 0 && (
+          <div class="inv-card-pills">
+            {pills.map((fact) => (
+              <div class="inv-pill">
+                <span>{fact}</span>
+              </div>
+            ))}
+          </div>
+        )
+      }
+
+      {
+        /* Sold and pending units print no price box at all. The tag on the
+           image already says what happened to them, and a price on something
+           that cannot be bought is an offer that is not real. */
+        (cash || askForPrice || monthly) && (
+          <div class="inv-price-box">
+            <div class="inv-price-left">
+              <p class:list={['inv-card-price', askForPrice && 'inv-card-price--ask']}>
+                {cash ?? ASK_FOR_PRICE}
+              </p>
+              {product.deliveryPromise && (
+                <p class="inv-card-delivery">{product.deliveryPromise}</p>
+              )}
+            </div>
+            {monthly && (
+              <div>
+                <p class="inv-financing-label">As low as</p>
+                <p class="inv-card-monthly">{monthly}</p>
+              </div>
+            )}
+          </div>
+        )
+      }
+    </div>
+
+    <div class="inv-card-actions">
+      <a class="btn btn-gold inv-card-cta" href={href}>
+        {muted ? 'View details' : 'See this unit'}
+        <span class="inv-card-cta-arrow" aria-hidden="true">&#8594;</span>
+      </a>
+      {
+        !muted && financingLink && (
+          <a class="inv-card-financing" href={financingLink}>
+            Apply For Financing
+          </a>
+        )
+      }
+    </div>
+  </div>
+</article>
+
+<style>
+  .inv-card {
+    background: var(--brand-surface);
+    border: 1px solid var(--brand-line);
+    border-radius: var(--brand-radius-card);
+    overflow: hidden;
+    box-shadow: 0 8px 22px -14px rgb(var(--brand-night-rgb) / 0.16);
+    transition:
+      box-shadow 0.4s var(--ease-out),
+      transform 0.4s var(--ease-out),
+      border-color 0.3s;
+  }
+  .inv-card:hover {
+    transform: translateY(-4px);
+    border-color: rgb(var(--brand-accent-deep-rgb) / 0.4);
+    box-shadow: 0 28px 54px -22px rgb(var(--brand-night-rgb) / 0.32);
+  }
+
+  .inv-card-img {
+    position: relative;
+    display: block;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: linear-gradient(155deg, #eef2f8, #e2e9f4);
+  }
+  .inv-card-img img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+    transition: transform 0.7s var(--ease-out);
+  }
+  .inv-card:hover .inv-card-img img {
+    transform: scale(1.045);
+  }
+  /* Sold and pending units stay visible as proof the floor moves, but read
+     as past tense rather than competing with what is still buyable. */
+  .inv-card.is-muted .inv-card-img img {
+    filter: grayscale(0.85) opacity(0.85);
+  }
+
+  .product-tag {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 1;
+    border-radius: var(--brand-radius-pill);
+    padding: 6px 12px;
+    font-family: var(--brand-font-mono);
+    font-weight: 600;
+    font-size: 0.6rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    background: linear-gradient(180deg, var(--brand-accent-lift), var(--brand-accent-deep));
+    color: var(--brand-night);
+    box-shadow: 0 8px 18px -8px rgb(var(--brand-accent-deep-rgb) / 0.7);
+  }
+  .product-tag-dark {
+    background: linear-gradient(180deg, #2a3244, var(--brand-ink));
+    color: #fff;
+    box-shadow: 0 8px 18px -8px rgb(0 0 0 / 0.5);
+  }
+
+  .inv-card-body {
+    padding: 20px 24px 24px;
+    display: flex;
+    flex-direction: column;
+  }
+  .inv-card-top {
+    flex: 1 1 auto;
+  }
+  .inv-card-name {
+    color: var(--brand-deep);
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 14px;
+  }
+  .inv-card-divider {
+    border: none;
+    border-top: 1px solid var(--brand-line);
+    margin: 0 0 14px;
+  }
+
+  .inv-card-pills {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .inv-pill {
+    min-height: 78px;
+    padding: 10px 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    text-align: center;
+  }
+  .inv-pill span {
+    color: var(--brand-ink-muted);
+    font-family: var(--brand-font-mono);
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    line-height: 1.5;
+  }
+
+  .inv-price-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 12px 18px;
+    margin-bottom: 14px;
+    padding-top: 13px;
+    border-top: 1px solid rgb(var(--brand-deep-rgb) / 0.09);
+  }
+  .inv-price-left {
+    flex: 1;
+    min-width: 0;
+  }
+  .inv-card-price {
+    color: var(--brand-deep);
+    font-family: var(--brand-font-display);
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+    margin: 0 0 4px;
+  }
+  .inv-card-price--ask {
+    font-size: 17px;
+    line-height: 1.25;
+  }
+  .inv-card-delivery {
+    font-family: var(--brand-font-mono);
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--brand-ink-muted);
+    margin: 0;
+  }
+  .inv-financing-label {
+    font-family: var(--brand-font-mono);
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--brand-ink-muted);
+    margin: 0 0 4px;
+    text-align: right;
+  }
+  .inv-card-monthly {
+    font-family: var(--brand-font-display);
+    font-size: 32px;
+    line-height: 1;
+    font-weight: 800;
+    background: linear-gradient(180deg, var(--brand-accent-deep) 8%, var(--brand-accent-dark) 70%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin: 0;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .inv-card-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .inv-card-cta {
+    width: 100%;
+    min-height: 56px;
+    font-size: 0.92rem;
+    letter-spacing: 0.01em;
+  }
+  .inv-card-cta-arrow {
+    font-size: 18px;
+    line-height: 1;
+    font-weight: 800;
+    position: relative;
+    z-index: 2;
+  }
+  .inv-card-financing {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 52px;
+    border-radius: 12px;
+    font-family: var(--brand-font-display);
+    font-weight: 800;
+    font-size: 0.88rem;
+    letter-spacing: 0.01em;
+    color: #fff;
+    background: linear-gradient(180deg, var(--brand-primary), var(--brand-deep));
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.18),
+      0 12px 26px -12px rgb(var(--brand-night-rgb) / 0.55);
+    transition:
+      transform 0.25s ease,
+      box-shadow 0.25s ease;
+  }
+  .inv-card-financing:hover {
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.22),
+      0 16px 34px -12px rgb(var(--brand-night-rgb) / 0.7);
+    transform: translateY(-1px);
+  }
+
+  /* ---- Horizontal layout from 901px, matching the live list ---- */
+  @media (min-width: 901px) {
+    .inv-card {
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+      border-radius: 18px;
+      box-shadow: 0 6px 18px -12px rgb(var(--brand-night-rgb) / 0.14);
+    }
+    .inv-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 24px 48px -22px rgb(var(--brand-night-rgb) / 0.3);
+    }
+    .inv-card-img {
+      width: 42%;
+      max-width: 360px;
+      min-width: 260px;
+      aspect-ratio: 1 / 1;
+      flex-shrink: 0;
+      align-self: stretch;
+    }
+    .inv-card-body {
+      flex: 1;
+      padding: 24px 28px;
+      justify-content: space-between;
+    }
+    .inv-card-top {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+    .inv-card-name {
+      order: 1;
+      margin-bottom: 10px;
+    }
+    .inv-card-divider {
+      display: none;
+    }
+    .inv-price-box {
+      order: 2;
+      margin-bottom: 14px;
+      padding-top: 0;
+      border-top: none;
+    }
+    .inv-card-pills {
+      order: 3;
+      display: flex;
+      justify-content: flex-start;
+      gap: 28px;
+      margin-top: auto;
+      margin-bottom: 0;
+      padding-top: 14px;
+      border-top: 1px solid var(--brand-line);
+    }
+    .inv-pill {
+      min-height: auto;
+      padding: 0;
+      align-items: center;
+    }
+    .inv-card-price {
+      font-size: 24px;
+    }
+    .inv-card-cta {
+      margin-top: 16px;
+      border-radius: 13px;
+      min-height: 54px;
+    }
+  }
+</style>

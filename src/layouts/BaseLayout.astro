@@ -1,0 +1,157 @@
+---
+/**
+ * BASE LAYOUT — the one <html> shell every page uses.
+ *
+ * The Header and Footer are mounted HERE, once. A page cannot render
+ * without them, and cannot render a different variant of them. That is the
+ * structural answer to "the logo was missing on 7 pages" and "the mobile
+ * menu was dead on 8 pages": there are no per-page copies to drift.
+ *
+ * Build-time LocalBusiness JSON-LD lands in this file in Phase 7, for the
+ * same reason — every page gets it by construction, not by remembering.
+ */
+import { site, derived } from '../config';
+import { buildLocalBusiness } from '../lib/seo';
+import BrandTokens from '../components/BrandTokens.astro';
+import JsonLd from '../components/JsonLd.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Path only, e.g. "/inventory". Canonical URL is derived from siteUrl. */
+  path?: string;
+  noindex?: boolean;
+  /** Page-specific share image. Falls back to the config default. */
+  ogImage?: string | null;
+  /** Extra structured data for this page type (Product, ItemList, …). */
+  jsonLd?: Record<string, unknown> | null;
+}
+
+const {
+  title,
+  description,
+  path = Astro.url.pathname,
+  noindex = false,
+  ogImage = null,
+  jsonLd = null,
+} = Astro.props;
+
+// Title and description fall back to config — never hand-typed per page.
+const pageTitle = title ? `${title} | ${site.identity.name}` : site.identity.name;
+const pageDescription = description ?? site.identity.tagline;
+const canonical = new URL(path, site.identity.siteUrl).href;
+const shareImage = new URL(ogImage ?? site.brand.logos.ogImage, site.identity.siteUrl).href;
+
+// Built here, once, for every page. The old build injected an incomplete
+// version at runtime and only on the homepage.
+const localBusiness = buildLocalBusiness();
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={pageDescription} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex" />}
+
+    <BrandTokens />
+
+    <link rel="icon" href={site.brand.logos.favicon} />
+    <meta name="theme-color" content={site.brand.colors.night} />
+
+    {
+      site.brand.fonts.googleFontsHref && (
+        <>
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+          <link rel="stylesheet" href={site.brand.fonts.googleFontsHref} />
+        </>
+      )
+    }
+
+    <meta property="og:site_name" content={site.identity.name} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={pageDescription} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={shareImage} />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={pageDescription} />
+    <meta name="twitter:image" content={shareImage} />
+
+    {/* Complete LocalBusiness on EVERY page, rendered server-side. */}
+    <JsonLd data={localBusiness} />
+    {/* Page-specific: Product on a detail page, ItemList on a listing. */}
+    <JsonLd data={jsonLd} />
+
+    {/* Enables the .reveal transitions only when JS is present, so a no-JS
+        visitor sees content rather than permanently-invisible sections. */}
+    <script is:inline>
+      document.documentElement.classList.add('js');
+    </script>
+
+    {
+      /* Zaraz injects its own runtime at the Cloudflare edge — there is no
+         snippet to paste here, and no GTM container. All this does is make
+         sure `dataLayer` exists before any island pushes to it, so an event
+         fired before the tag runtime loads is queued rather than lost.
+         Enable Zaraz and add the Managed Components in the Cloudflare
+         dashboard; see the README for the trigger mapping. */
+      site.integrations.zaraz.enabled && (
+        <script is:inline>window.dataLayer = window.dataLayer || [];</script>
+      )
+    }
+  </head>
+  <body>
+    {
+      derived.isTemplate && (
+        <div class="template-banner" role="status">
+          TEMPLATE MODE — placeholder config. The deploy gate will refuse to ship this.
+        </div>
+      )
+    }
+
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <Header />
+
+    <main id="main">
+      <slot />
+    </main>
+
+    <Footer />
+  </body>
+</html>
+
+<style>
+  .template-banner {
+    background: var(--brand-urgent);
+    color: #fff;
+    padding: 8px 16px;
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+  .skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: 200;
+    background: var(--brand-accent);
+    color: var(--brand-night);
+    padding: 12px 18px;
+    font-weight: 700;
+    border-radius: 0 0 12px 0;
+  }
+  .skip-link:focus {
+    left: 0;
+  }
+</style>

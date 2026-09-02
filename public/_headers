@@ -1,0 +1,10 @@
+/*
+  X-Frame-Options: SAMEORIGIN
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: ch-ua-model=(*), ch-ua-platform-version=(*), ch-ua-full-version=(*)
+
+# Admin is URL + server-auth only. Never linked, never indexed.
+/admin/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: private, no-store

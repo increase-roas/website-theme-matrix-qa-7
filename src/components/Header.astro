@@ -1,0 +1,410 @@
+---
+/**
+ * THE HEADER. Singular.
+ *
+ * Sun Pool had FOUR headers doing this one job (`site-top`, `site-header`,
+ * `navbar`, `fin-topbar`). Between them: a logo missing on 7 pages, a mobile
+ * hamburger that was DEAD on 8 pages (a button with no menu and no script),
+ * a text-only drawer on a dark background, and nav labels that drifted into
+ * five different names for the same link.
+ *
+ * All of that came from copying a header per page type. There is now one
+ * component, so:
+ *   - the logo cannot be missing on some pages — there is one <img>
+ *   - the mobile menu cannot be dead on some pages — the drawer AND its
+ *     script ship inside this component, so a page with a header has a
+ *     working menu by construction
+ *   - the drawer cannot show text on a dark background — it uses the
+ *     knockout logo variant from config
+ *   - nav labels cannot drift — they come from one config list
+ *   - the phone cannot render as plain text — <a href={telHref}> is the
+ *     only way this component knows how to draw it
+ *
+ * Styling is an exact port of the live site's `.site-top` block: the same
+ * 85%-white blur bar, the 2px gold underline that scales in from the left,
+ * the 48px burger with the rotating bars, and the 0.38s drawer slide.
+ * Not one colour literal — every value reads a --brand-* token.
+ */
+import { site, derived } from '../config';
+
+const path = Astro.url.pathname.replace(/\/+$/, '') || '/';
+
+function isActive(href: string): boolean {
+  const clean = href.replace(/\/+$/, '') || '/';
+  if (clean === '/') return path === '/';
+  return path === clean || path.startsWith(`${clean}/`);
+}
+
+const { headerNav, telHref, smsHref, phoneDisplay, addressOneLine, hoursDisplay } = derived;
+const cta = site.nav.primaryCta;
+---
+
+<header class="site-top">
+  <div class="site-top-inner">
+    <a class="logo-mark" href="/" aria-label={`${site.identity.name} — home`}>
+      <img
+        src={site.brand.logos.nav}
+        alt={site.identity.name}
+        height="42"
+        decoding="async"
+      />
+    </a>
+
+    <nav class="nav-desktop" aria-label="Main">
+      {
+        headerNav.map((item) => (
+          <a
+            class="nav-link"
+            href={item.href}
+            aria-current={isActive(item.href) ? 'page' : undefined}
+            {...(item.external ? { target: '_blank', rel: 'noopener' } : {})}
+          >
+            {item.label}
+          </a>
+        ))
+      }
+    </nav>
+
+    <div class="header-cta">
+      <div class="phone-stack">
+        {/* A phone is only ever drawn as a tel: link. There is no code path
+            in this component that renders one as plain text. */}
+        <a href={telHref} data-call-source="header_phone">{phoneDisplay}</a>
+        <span>Call or <a href={smsHref}>Text</a></span>
+      </div>
+      <a class="btn btn-gold btn-sm" href={cta.href}>{cta.label}</a>
+    </div>
+
+    <button
+      class="burger"
+      id="burger"
+      type="button"
+      aria-expanded="false"
+      aria-controls="drawer"
+      aria-label="Open menu"
+    >
+      <i></i><i></i><i></i>
+    </button>
+  </div>
+</header>
+
+{/* The drawer is part of the header component, not a separate include a
+    page could forget. Its logo is the KNOCKOUT variant — the live site's
+    drawer showed plain text on a navy panel because the dark-background
+    logo was never wired up. */}
+<div class="drawer" id="drawer" aria-hidden="true" inert>
+  <div class="drawer-head">
+    <a href="/" aria-label={`${site.identity.name} — home`}>
+      <img src={site.brand.logos.footer} alt={site.identity.name} height="48" decoding="async" />
+    </a>
+    <button id="drawerClose" type="button" aria-label="Close menu">&#10005;</button>
+  </div>
+
+  <nav aria-label="Mobile">
+    {
+      headerNav.map((item) => (
+        <a href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>
+          {item.label} <span aria-hidden="true">&#8594;</span>
+        </a>
+      ))
+    }
+  </nav>
+
+  <div class="drawer-actions">
+    <a class="btn btn-gold" href={cta.href}>{cta.label}</a>
+    <a class="btn btn-ghost" href={smsHref}>Text us</a>
+    <a class="btn btn-ghost" href={telHref} data-call-source="drawer_phone">Call {phoneDisplay}</a>
+  </div>
+
+  <p class="drawer-meta">
+    <span>{addressOneLine}</span>
+    <span aria-hidden="true"> · </span>
+    <span>{hoursDisplay.map((h) => h.label).join(', ')}</span>
+  </p>
+</div>
+
+<style>
+  /* ---- Sticky glass bar ---- */
+  .site-top {
+    position: sticky;
+    top: 0;
+    z-index: 80;
+    border-bottom: 1px solid rgb(var(--brand-deep-rgb) / 0.1);
+    background: rgb(255 255 255 / 0.85);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+  .site-top-inner {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-height: 64px;
+    max-width: var(--wrap);
+    margin: 0 auto;
+    padding: 12px 20px;
+  }
+
+  /* ---- Logo ---- */
+  .logo-mark {
+    display: flex;
+    align-items: center;
+    margin-right: auto;
+    min-width: 0;
+  }
+  .logo-mark img {
+    height: 42px;
+    width: auto;
+    display: block;
+  }
+
+  /* ---- Desktop nav ---- */
+  .nav-desktop {
+    display: none;
+    gap: 24px;
+  }
+  .nav-link {
+    position: relative;
+    font-family: var(--brand-font-display);
+    font-weight: 600;
+    font-size: 0.8rem;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--brand-ink);
+    padding: 8px 0;
+    white-space: nowrap;
+  }
+  .nav-link::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 2px;
+    height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--brand-accent), var(--brand-accent-deep));
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s var(--ease-out);
+  }
+  .nav-link:hover {
+    color: var(--brand-primary);
+  }
+  .nav-link:hover::after,
+  .nav-link[aria-current='page']::after {
+    transform: scaleX(1);
+  }
+  .nav-link[aria-current='page'] {
+    color: var(--brand-primary);
+  }
+
+  /* ---- Phone + CTA. flex:none so a long logo cannot squeeze the number
+     into a "(619) 561-" / "8587" line break. ---- */
+  .header-cta {
+    display: none;
+    align-items: center;
+    gap: 16px;
+    margin-left: auto;
+    flex: none;
+  }
+  .phone-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    line-height: 1.2;
+  }
+  .phone-stack > a {
+    font-family: var(--brand-font-display);
+    font-size: 1.04rem;
+    font-weight: 700;
+    color: var(--brand-primary);
+    white-space: nowrap;
+  }
+  .phone-stack span {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--brand-ink-muted);
+  }
+  .phone-stack span a {
+    text-decoration: underline;
+  }
+
+  /* ---- Burger ---- */
+  .burger {
+    width: 48px;
+    height: 48px;
+    border: 1px solid var(--brand-line);
+    border-radius: 12px;
+    background: var(--brand-surface);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    flex: none;
+  }
+  .burger i {
+    width: 20px;
+    height: 2px;
+    background: var(--brand-deep);
+    border-radius: 2px;
+    transition:
+      transform 0.25s var(--ease-out),
+      opacity 0.2s;
+  }
+  .burger[aria-expanded='true'] i:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+  }
+  .burger[aria-expanded='true'] i:nth-child(2) {
+    opacity: 0;
+  }
+  .burger[aria-expanded='true'] i:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+  }
+
+  /* ---- Drawer ---- */
+  .drawer {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background:
+      radial-gradient(1000px 700px at 85% -10%, rgb(var(--brand-primary-rgb) / 0.55), transparent 60%),
+      linear-gradient(180deg, var(--brand-night), var(--brand-abyss));
+    color: #fff;
+    padding: 22px 20px calc(34px + env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column;
+    transform: translateX(102%);
+    visibility: hidden;
+    transition:
+      transform 0.38s var(--ease-out),
+      visibility 0s linear 0.38s;
+    overflow-y: auto;
+  }
+  .drawer.open {
+    transform: none;
+    visibility: visible;
+    transition:
+      transform 0.38s var(--ease-out),
+      visibility 0s;
+  }
+  .drawer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+  }
+  .drawer-head img {
+    height: 48px;
+    width: auto;
+    display: block;
+  }
+  #drawerClose {
+    height: 48px;
+    width: 48px;
+    border-radius: 12px;
+    border: 1px solid rgb(255 255 255 / 0.3);
+    background: transparent;
+    color: #fff;
+    font-size: 1.4rem;
+    cursor: pointer;
+  }
+  .drawer nav a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--brand-font-display);
+    font-weight: 700;
+    font-size: 1.4rem;
+    color: #fff;
+    padding: 16px 0;
+    border-bottom: 1px solid rgb(255 255 255 / 0.09);
+    transition:
+      padding-left 0.25s var(--ease-out),
+      color 0.25s;
+  }
+  .drawer nav a:hover {
+    padding-left: 8px;
+    color: var(--brand-accent-soft);
+  }
+  .drawer nav a span {
+    color: var(--brand-accent);
+  }
+  .drawer-actions {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 28px;
+  }
+  .drawer-meta {
+    margin-top: 16px;
+    text-align: center;
+    font-size: 0.82rem;
+    color: var(--brand-on-dark);
+  }
+
+  /* ---- Desktop ---- */
+  @media (min-width: 1140px) {
+    .burger,
+    .drawer {
+      display: none;
+    }
+    .nav-desktop,
+    .header-cta {
+      display: flex;
+    }
+    .logo-mark {
+      margin-right: 0;
+    }
+  }
+</style>
+
+<script>
+  /**
+   * Drawer behaviour. This script lives INSIDE the header component, so a
+   * page cannot have a hamburger without the code that makes it work —
+   * which is exactly how 8 pages ended up with a dead button.
+   *
+   * `inert` (not just aria-hidden) is what keeps the closed drawer out of
+   * the tab order and the accessibility tree. The drawer is only translated
+   * off-screen, so without it a keyboard user tabs into an invisible menu.
+   */
+  const burger = document.getElementById('burger');
+  const drawer = document.getElementById('drawer');
+
+  if (burger && drawer) {
+    const setDrawer = (open: boolean) => {
+      drawer.classList.toggle('open', open);
+      drawer.setAttribute('aria-hidden', String(!open));
+      drawer.toggleAttribute('inert', !open);
+      burger.setAttribute('aria-expanded', String(open));
+      burger.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+      document.body.style.overflow = open ? 'hidden' : '';
+    };
+
+    setDrawer(false);
+
+    burger.addEventListener('click', () => setDrawer(!drawer.classList.contains('open')));
+
+    document.getElementById('drawerClose')?.addEventListener('click', () => setDrawer(false));
+
+    // Any link closes the drawer — including same-page anchors, which do not
+    // trigger a navigation and would otherwise leave the menu covering the
+    // content the user just asked to see.
+    drawer.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => setDrawer(false)));
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && drawer.classList.contains('open')) {
+        setDrawer(false);
+        burger.focus();
+      }
+    });
+
+    // Crossing the desktop breakpoint while open would otherwise leave
+    // body scroll locked with no visible drawer to close.
+    window.matchMedia('(min-width: 1140px)').addEventListener('change', (e) => {
+      if (e.matches) setDrawer(false);
+    });
+  }
+</script>

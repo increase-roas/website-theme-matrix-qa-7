@@ -1,0 +1,87 @@
+---
+/**
+ * Breadcrumbs, with matching BreadcrumbList JSON-LD.
+ *
+ * The visible trail and the structured data are generated from ONE array, so
+ * they cannot describe different paths. On the live site the SEO breadcrumb
+ * still listed saunas after the category had been removed from the nav —
+ * because they were two separate pieces of markup.
+ */
+import { site } from '../config';
+
+export interface Crumb {
+  label: string;
+  href: string;
+}
+
+interface Props {
+  trail: Crumb[];
+}
+
+const { trail } = Astro.props;
+
+const items = [{ label: 'Home', href: '/' }, ...trail];
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: items.map((c, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    name: c.label,
+    item: new URL(c.href, site.identity.siteUrl).href,
+  })),
+};
+---
+
+<nav class="crumbs" aria-label="Breadcrumb">
+  <ol>
+    {
+      items.map((c, i) => (
+        <li>
+          {i < items.length - 1 ? (
+            <>
+              <a href={c.href}>{c.label}</a>
+              <span aria-hidden="true">/</span>
+            </>
+          ) : (
+            <span aria-current="page">{c.label}</span>
+          )}
+        </li>
+      ))
+    }
+  </ol>
+</nav>
+
+<script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />
+
+<style>
+  .crumbs {
+    padding: 18px 0 0;
+  }
+  .crumbs ol {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    list-style: none;
+    font-family: var(--brand-font-mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--brand-ink-muted);
+  }
+  .crumbs li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .crumbs a:hover {
+    color: var(--brand-primary);
+    text-decoration: underline;
+  }
+  .crumbs [aria-current='page'] {
+    color: var(--brand-ink);
+    font-weight: 600;
+  }
+</style>

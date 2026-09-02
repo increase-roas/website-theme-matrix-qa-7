@@ -1,0 +1,180 @@
+---
+/**
+ * CATEGORY LISTING — ONE file renders every category.
+ *
+ * /hot-tubs, /swim-spas, /saunas, /massage-chairs, /cold-plunges and
+ * anything added to the catalog later all come through here. There is no
+ * per-category page, which is the structural reason the saunas defect cannot
+ * repeat: turning a category off removes its route because the route only
+ * exists for categories the config enables.
+ *
+ * A request for a disabled category returns a real 404 — not a redirect to
+ * the homepage, and not an empty listing that looks like a broken page.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CategoryHero from '../../components/CategoryHero.astro';
+import ProductCard from '../../components/ProductCard.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import { findCategoryBySegment } from '../../config/categories';
+import { enabledCategories, isCategoryEnabled, site } from '../../config';
+import { getDb, listProducts, inventoryStatus } from '../../lib/db';
+import { buildItemList } from '../../lib/seo';
+
+const { category: segment = '' } = Astro.params;
+
+// Resolve the URL segment through the catalog, then check config. Both must
+// pass: the catalog says the template knows this type, config says this
+// client sells it.
+const definition = findCategoryBySegment(segment);
+const enabled = definition ? isCategoryEnabled(definition.slug) : false;
+const resolved = enabled ? enabledCategories.find((c) => c.slug === definition?.slug) : undefined;
+
+if (!resolved) {
+  Astro.response.status = 404;
+  Astro.response.statusText = 'Not Found';
+}
+
+const db = resolved ? getDb() : null;
+const dbStatus = inventoryStatus(db);
+const products = db && resolved ? await listProducts(db, { category: resolved.slug }) : [];
+const itemList = resolved ? buildItemList(products, `${resolved.label} at ${site.identity.name}`) : null;
+---
+
+{
+  !resolved ? (
+    <BaseLayout title="Page not found" noindex>
+      <div class="wrap not-found">
+        <p class="eyebrow">404</p>
+        <h1>We don't have that page</h1>
+        <p>
+          {site.identity.name} doesn't carry that category. Here's what we do have on the floor:
+        </p>
+        <ul class="nf-links">
+          {enabledCategories.map((c) => (
+            <li>
+              <a class="btn btn-ghost-blue" href={c.href}>
+                {c.label}
+              </a>
+            </li>
+          ))}
+          <li>
+            <a class="btn btn-gold" href={site.nav.primaryCta.href}>
+              {site.nav.primaryCta.label}
+            </a>
+          </li>
+        </ul>
+      </div>
+    </BaseLayout>
+  ) : (
+    <BaseLayout
+      title={resolved.label}
+      description={`${resolved.blurb} See what ${site.identity.name} has in stock in ${site.address.city}.`}
+      path={resolved.href}
+      ogImage={resolved.heroImage}
+      jsonLd={itemList}
+    >
+      <CategoryHero
+        eyebrow={site.address.region ? `${site.address.city}, ${site.address.region}` : undefined}
+        title={resolved.label}
+        subtitle={resolved.blurb}
+        image={resolved.heroImage}
+        count={db ? products.length : undefined}
+      />
+
+      <div class="wrap">
+        <Breadcrumbs trail={[{ label: resolved.label, href: resolved.href }]} />
+      </div>
+
+      <section class="listing wrap">
+        {!dbStatus.configured ? (
+          <div class="empty">
+            <h2>Inventory isn't connected yet</h2>
+            <p>{dbStatus.message}</p>
+          </div>
+        ) : products.length === 0 ? (
+          <div class="empty">
+            <h2>Nothing on the floor right now</h2>
+            <p>
+              We move units quickly. Call us and we'll tell you what's arriving — often before it
+              reaches the website.
+            </p>
+            <p class="empty-actions">
+              <a class="btn btn-gold" href={site.nav.primaryCta.href}>
+                {site.nav.primaryCta.label}
+              </a>
+            </p>
+          </div>
+        ) : (
+          <div class="inv-grid">
+            {products.map((product) => (
+              <ProductCard product={product} />
+            ))}
+          </div>
+        )}
+      </section>
+    </BaseLayout>
+  )
+}
+
+<style>
+  .listing {
+    padding: 28px 20px 72px;
+  }
+  @media (min-width: 900px) {
+    .listing {
+      padding: 32px 24px 88px;
+    }
+  }
+  .inv-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+  @media (min-width: 901px) {
+    .inv-grid {
+      gap: 20px;
+    }
+  }
+
+  .empty {
+    text-align: center;
+    padding: 56px 24px;
+    background: var(--brand-surface);
+    border: 1px solid var(--brand-line);
+    border-radius: var(--brand-radius-card);
+  }
+  .empty h2 {
+    font-size: 1.5rem;
+    color: var(--brand-deep);
+  }
+  .empty p {
+    margin-top: 10px;
+    color: var(--brand-ink-muted);
+    max-width: 52ch;
+    margin-inline: auto;
+  }
+  .empty-actions {
+    margin-top: 22px;
+  }
+
+  .not-found {
+    padding: 72px 20px 96px;
+    text-align: center;
+  }
+  .not-found h1 {
+    font-size: clamp(1.8rem, 5vw, 2.8rem);
+    color: var(--brand-deep);
+  }
+  .not-found p {
+    margin-top: 12px;
+    color: var(--brand-ink-muted);
+  }
+  .nf-links {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 28px;
+  }
+</style>

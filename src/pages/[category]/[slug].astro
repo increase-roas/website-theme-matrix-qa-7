@@ -1,0 +1,490 @@
+---
+/**
+ * PRODUCT DETAIL — ONE file renders every product in every category.
+ *
+ * Two checks have to pass before anything renders: the URL's category must
+ * be one this client sells, AND the product must actually be in it. So an
+ * old /saunas/whatever link cannot resurrect a page after saunas are turned
+ * off, even though the row is still in the database.
+ *
+ * Every image goes through the absolute-path guard. Every price string comes
+ * from lib/format.ts, so this page and the listing card cannot disagree.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import LeadQuiz from '../../components/LeadQuiz.astro';
+import { findCategoryBySegment } from '../../config/categories';
+import { enabledCategories, isCategoryEnabled, site, derived } from '../../config';
+import { getDb, getProductBySlug, listProducts, inventoryStatus } from '../../lib/db';
+import { assetOrWarn } from '../../lib/assets';
+import { pricingFor, statusLabel, isMutedStatus, ASK_FOR_PRICE } from '../../lib/format';
+import { buildProduct } from '../../lib/seo';
+
+const { category: segment = '', slug = '' } = Astro.params;
+
+const definition = findCategoryBySegment(segment);
+const enabled = definition ? isCategoryEnabled(definition.slug) : false;
+const resolved = enabled ? enabledCategories.find((c) => c.slug === definition?.slug) : undefined;
+
+const db = resolved ? getDb() : null;
+const dbStatus = inventoryStatus(db);
+const product = db && resolved ? await getProductBySlug(db, slug) : null;
+
+// The product must live in the category the URL claims, or /hot-tubs/x and
+// /swim-spas/x would both resolve and split the page's ranking signals.
+const valid = product !== null && resolved !== undefined && product.category === resolved.slug;
+
+if (!valid) {
+  Astro.response.status = 404;
+  Astro.response.statusText = 'Not Found';
+}
+
+const related =
+  valid && db && resolved
+    ? (await listProducts(db, { category: resolved.slug, limit: 4 })).filter(
+        (p) => p.slug !== product?.slug,
+      )
+    : [];
+
+const image = product ? assetOrWarn(product.primaryImage, `product "${product.slug}"`) : null;
+const gallery = product
+  ? product.galleryImages
+      .map((g) => assetOrWarn(g, `gallery of "${product.slug}"`))
+      .filter((g): g is string => g !== null)
+  : [];
+const { cash, monthly, askForPrice } = product
+  ? pricingFor(product)
+  : { cash: null, monthly: null, askForPrice: false };
+const badge = product ? product.promoLabel || statusLabel(product.status, product.quantity) : null;
+const muted = product ? isMutedStatus(product.status) : false;
+
+// Product + Offer, built from the row rather than hand-written per page.
+const productSchema =
+  valid && product && resolved ? buildProduct(product, `${resolved.href}/${product.slug}`) : null;
+---
+
+{
+  !valid ? (
+    <BaseLayout title="Product not found" noindex>
+      <div class="wrap not-found">
+        <p class="eyebrow">404</p>
+        <h1>That unit isn't on the floor</h1>
+        <p>
+          {dbStatus.configured
+            ? 'It may have sold, or the link may be out of date.'
+            : dbStatus.message}
+        </p>
+        <p class="nf-actions">
+          <a class="btn btn-gold" href={site.nav.primaryCta.href}>
+            {site.nav.primaryCta.label}
+          </a>
+          <a class="btn btn-ghost-blue" href={derived.telHref}>
+            Call {derived.phoneDisplay}
+          </a>
+        </p>
+      </div>
+    </BaseLayout>
+  ) : (
+    <BaseLayout
+      title={product!.inventoryName}
+      description={product!.heroDescription || `${product!.inventoryName} at ${site.identity.name}.`}
+      path={`${resolved!.href}/${product!.slug}`}
+      ogImage={image}
+      jsonLd={productSchema}
+    >
+      <div class="wrap">
+        <Breadcrumbs
+          trail={[
+            { label: resolved!.label, href: resolved!.href },
+            { label: product!.inventoryName, href: `${resolved!.href}/${product!.slug}` },
+          ]}
+        />
+      </div>
+
+      <article class="pdp wrap">
+        <div class="pdp-media">
+          <div class:list={['pdp-hero-img', muted && 'is-muted']}>
+            {image && <img src={image} alt={product!.inventoryName} fetchpriority="high" decoding="async" />}
+            {badge && <span class:list={['product-tag', muted && 'product-tag-dark']}>{badge}</span>}
+          </div>
+          {gallery.length > 0 && (
+            <div class="pdp-gallery">
+              {gallery.map((g, i) => (
+                <img src={g} alt={`${product!.inventoryName} — view ${i + 2}`} loading="lazy" decoding="async" />
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div class="pdp-info">
+          {product!.positioningLabel && <p class="eyebrow">{product!.positioningLabel}</p>}
+          <h1>{product!.headline || product!.inventoryName}</h1>
+          {product!.headline && <p class="pdp-model">{product!.inventoryName}</p>}
+          {product!.heroDescription && <p class="pdp-lede">{product!.heroDescription}</p>}
+
+          {/* Sold and pending units quote nothing — no cash price, no
+              monthly payment, not even an invitation to ask. There is
+              nothing left to sell on this page. */}
+          {(cash || askForPrice || monthly) && (
+            <div class="pdp-price">
+              <div>
+                <p class:list={['pdp-cash', askForPrice && 'pdp-cash--ask']}>
+                  {cash ?? ASK_FOR_PRICE}
+                </p>
+                {product!.deliveryPromise && (
+                  <p class="pdp-delivery">{product!.deliveryPromise}</p>
+                )}
+              </div>
+              {monthly && (
+                <div class="pdp-monthly-block">
+                  <p class="pdp-monthly-label">As low as</p>
+                  <p class="pdp-monthly">{monthly}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div class="pdp-actions">
+            <a class="btn btn-gold btn-block" href={derived.telHref}>
+              Call {derived.phoneDisplay}
+            </a>
+            {site.financing && (
+              <a class="btn btn-navy btn-block" href="/financing">
+                Apply For Financing
+              </a>
+            )}
+          </div>
+
+          {product!.quickFacts.length > 0 && (
+            <ul class="pdp-facts">
+              {product!.quickFacts.map((f) => (
+                <li>{f}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </article>
+
+      {(product!.whyBullets.length > 0 || product!.longDescription || product!.bestFor) && (
+        <section class="pdp-detail wrap">
+          {product!.whyBullets.length > 0 && (
+            <div>
+              <h2>Why this one</h2>
+              <ul class="why">
+                {product!.whyBullets.map((b) => (
+                  <li>{b}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {(product!.longDescription || product!.bestFor) && (
+            <div>
+              {product!.longDescription && (
+                <>
+                  <h2>The details</h2>
+                  <p>{product!.longDescription}</p>
+                </>
+              )}
+              {product!.bestFor && (
+                <p class="best-for">
+                  <strong>Best for:</strong>{' '}
+                  {product!.bestFor}
+                </p>
+              )}
+            </div>
+          )}
+        </section>
+      )}
+
+      <section class="pdp-lead wrap">
+        <LeadQuiz
+          sourcePage={`${resolved!.href}/${product!.slug}`}
+          productSlug={product!.slug}
+          heading="Want the price on this one?"
+          variant="secondary"
+        />
+      </section>
+
+      {related.length > 0 && (
+        <section class="related wrap">
+          <h2>More {resolved!.label.toLowerCase()}</h2>
+          <ul>
+            {related.map((r) => (
+              <li>
+                <a href={`${r.categoryHref}/${r.slug}`}>{r.inventoryName}</a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </BaseLayout>
+  )
+}
+
+<style>
+  .pdp {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding: 24px 20px 56px;
+  }
+  @media (min-width: 1000px) {
+    .pdp {
+      grid-template-columns: 1.05fr 1fr;
+      gap: 48px;
+      padding: 32px 24px 72px;
+    }
+  }
+
+  .pdp-hero-img {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    border-radius: var(--brand-radius-card);
+    overflow: hidden;
+    background: linear-gradient(155deg, #eef2f8, #e2e9f4);
+    border: 1px solid var(--brand-line);
+  }
+  .pdp-hero-img img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .pdp-hero-img.is-muted img {
+    filter: grayscale(0.85) opacity(0.85);
+  }
+  .product-tag {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    border-radius: var(--brand-radius-pill);
+    padding: 6px 12px;
+    font-family: var(--brand-font-mono);
+    font-weight: 600;
+    font-size: 0.6rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    background: linear-gradient(180deg, var(--brand-accent-lift), var(--brand-accent-deep));
+    color: var(--brand-night);
+    box-shadow: 0 8px 18px -8px rgb(var(--brand-accent-deep-rgb) / 0.7);
+  }
+  .product-tag-dark {
+    background: linear-gradient(180deg, #2a3244, var(--brand-ink));
+    color: #fff;
+  }
+
+  .pdp-gallery {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .pdp-gallery img {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 1px solid var(--brand-line);
+  }
+
+  .pdp-info h1 {
+    font-size: clamp(1.7rem, 4vw, 2.6rem);
+    color: var(--brand-deep);
+    line-height: 1.1;
+  }
+  .pdp-model {
+    margin-top: 8px;
+    font-family: var(--brand-font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--brand-ink-muted);
+  }
+  .pdp-lede {
+    margin-top: 16px;
+    color: var(--brand-ink-muted);
+    line-height: 1.65;
+  }
+
+  .pdp-price {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 18px;
+    margin-top: 26px;
+    padding-top: 18px;
+    border-top: 1px solid rgb(var(--brand-deep-rgb) / 0.09);
+  }
+  .pdp-cash {
+    font-family: var(--brand-font-display);
+    font-size: 34px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--brand-deep);
+    line-height: 1.1;
+  }
+  .pdp-cash--ask {
+    font-size: 20px;
+  }
+  .pdp-delivery {
+    margin-top: 6px;
+    font-family: var(--brand-font-mono);
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--brand-ink-muted);
+  }
+  .pdp-monthly-block {
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .pdp-monthly-label {
+    font-family: var(--brand-font-mono);
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--brand-ink-muted);
+  }
+  .pdp-monthly {
+    font-family: var(--brand-font-display);
+    font-size: 36px;
+    line-height: 1;
+    font-weight: 800;
+    background: linear-gradient(180deg, var(--brand-accent-deep) 8%, var(--brand-accent-dark) 70%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .pdp-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 22px;
+  }
+  @media (min-width: 600px) {
+    .pdp-actions {
+      flex-direction: row;
+    }
+  }
+
+  .pdp-facts {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 24px;
+  }
+  .pdp-facts li {
+    font-family: var(--brand-font-mono);
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--brand-ink-muted);
+    border: 1px solid var(--brand-line);
+    border-radius: var(--brand-radius-pill);
+    padding: 8px 14px;
+  }
+
+  .pdp-detail {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding: 8px 20px 64px;
+  }
+  @media (min-width: 1000px) {
+    .pdp-detail {
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      padding: 8px 24px 80px;
+    }
+  }
+  .pdp-detail h2 {
+    font-size: 1.4rem;
+    color: var(--brand-deep);
+    margin-bottom: 12px;
+  }
+  .pdp-detail p {
+    color: var(--brand-ink-muted);
+    line-height: 1.7;
+  }
+  .why {
+    list-style: none;
+  }
+  .why li {
+    position: relative;
+    padding-left: 26px;
+    margin-bottom: 10px;
+    color: var(--brand-ink-muted);
+    line-height: 1.6;
+  }
+  .why li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: var(--brand-accent-deep);
+    font-weight: 700;
+  }
+  .best-for {
+    margin-top: 16px;
+  }
+  .best-for strong {
+    color: var(--brand-deep);
+  }
+
+  .pdp-lead {
+    padding: 0 20px 56px;
+    max-width: 720px;
+  }
+
+  .related {
+    padding: 0 20px 72px;
+  }
+  .related h2 {
+    font-size: 1.2rem;
+    color: var(--brand-deep);
+    margin-bottom: 12px;
+  }
+  .related ul {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .related a {
+    display: inline-block;
+    border: 1px solid var(--brand-line);
+    border-radius: var(--brand-radius-pill);
+    padding: 10px 16px;
+    font-size: 0.85rem;
+    color: var(--brand-deep);
+  }
+  .related a:hover {
+    border-color: var(--brand-accent);
+    background: rgb(var(--brand-accent-rgb) / 0.06);
+  }
+
+  .not-found {
+    padding: 72px 20px 96px;
+    text-align: center;
+  }
+  .not-found h1 {
+    font-size: clamp(1.8rem, 5vw, 2.8rem);
+    color: var(--brand-deep);
+  }
+  .not-found p {
+    margin-top: 12px;
+    color: var(--brand-ink-muted);
+  }
+  .nf-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 28px;
+  }
+</style>

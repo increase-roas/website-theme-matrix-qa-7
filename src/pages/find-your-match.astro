@@ -1,0 +1,95 @@
+---
+/**
+ * FIND YOUR MATCH — the quiz page.
+ *
+ * The nav item pointing here comes from config, and so do the quiz's
+ * options. There is no list of product types in this file.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import LeadQuiz from '../components/LeadQuiz.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { site, derived, enabledCategories } from '../config';
+---
+
+<BaseLayout
+  title="Find Your Match"
+  description={`Answer one question and we'll show you what ${site.identity.name} has on the floor.`}
+  path="/find-your-match"
+>
+  <section class="fym-head">
+    <div class="wrap">
+      <p class="eyebrow">60 seconds</p>
+      <h1>Not sure which one fits?</h1>
+      <p class="fym-sub">
+        Tell us what you're shopping for and we'll send current pricing on what's actually in
+        stock — no showroom visit required first.
+      </p>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <Breadcrumbs trail={[{ label: 'Find Your Match', href: '/find-your-match' }]} />
+  </div>
+
+  <section class="fym-body wrap">
+    <div class="fym-quiz">
+      <LeadQuiz sourcePage="/find-your-match" hydrate="load" />
+    </div>
+
+    <aside class="fym-aside">
+      <h2>Or just call us</h2>
+      <p>
+        We'd rather answer your questions than have you fill in a form. Reach a real person
+        during store hours.
+      </p>
+      <a class="btn btn-gold btn-block" href={derived.telHref}>Call {derived.phoneDisplay}</a>
+      <ul class="fym-hours">
+        {derived.hoursDisplay.map((h) => <li><span>{h.days}</span> {h.time}</li>)}
+      </ul>
+      {
+        enabledCategories.length > 0 && (
+          <>
+            <h2 class="fym-browse">Browse instead</h2>
+            <ul class="fym-links">
+              {enabledCategories.map((c) => <li><a href={c.href}>{c.label}</a></li>)}
+            </ul>
+          </>
+        )
+      }
+    </aside>
+  </section>
+</BaseLayout>
+
+<style>
+  .fym-head {
+    background: linear-gradient(180deg, var(--brand-night), var(--brand-abyss));
+    color: #fff;
+    padding: 56px 0 48px;
+  }
+  @media (min-width: 900px) { .fym-head { padding: 72px 0 56px; } }
+  .fym-head .eyebrow { color: var(--brand-accent-soft); }
+  .fym-head h1 { font-size: clamp(2rem, 5.4vw, 3rem); letter-spacing: -0.02em; line-height: 1.08; }
+  .fym-sub { margin-top: 14px; max-width: 56ch; color: var(--brand-on-dark); line-height: 1.6; }
+
+  .fym-body {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding: 24px 20px 80px;
+  }
+  @media (min-width: 1000px) {
+    .fym-body { grid-template-columns: 1.15fr 0.85fr; gap: 48px; padding: 32px 24px 96px; }
+  }
+  .fym-aside h2 { font-size: 1.2rem; color: var(--brand-deep); margin-bottom: 10px; }
+  .fym-aside p { color: var(--brand-ink-muted); line-height: 1.6; margin-bottom: 16px; }
+  .fym-browse { margin-top: 28px; }
+  .fym-hours { list-style: none; margin-top: 16px; font-size: 0.86rem; color: var(--brand-ink-muted); }
+  .fym-hours span { color: var(--brand-deep); font-weight: 600; }
+  .fym-links { list-style: none; display: flex; flex-wrap: wrap; gap: 10px; }
+  .fym-links a {
+    display: inline-block; border: 1px solid var(--brand-line);
+    border-radius: var(--brand-radius-pill); padding: 10px 16px;
+    font-size: 0.85rem; color: var(--brand-deep);
+  }
+  .fym-links a:hover { border-color: var(--brand-accent); background: rgb(var(--brand-accent-rgb) / 0.06); }
+</style>

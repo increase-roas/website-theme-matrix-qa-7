@@ -1,0 +1,444 @@
+---
+/**
+ * ADMIN PANEL — URL + server auth only. Never linked from a public page.
+ *
+ * Three things keep it that way, and none of them rely on remembering:
+ *   - No component renders a link here. The Footer has no admin markup at
+ *     all, and the nav is built from config, which has no admin entry.
+ *   - astro.config excludes /admin from the sitemap.
+ *   - public/_headers sends X-Robots-Tag noindex,nofollow and no-store for
+ *     /admin/*, and robots.txt disallows it.
+ *
+ * The page itself is a shell. It renders NO product data server-side —
+ * everything is fetched with a Bearer token after login, so an unauthorised
+ * request gets an empty form, not a leaked inventory list.
+ *
+ * No React here on purpose. The customer-facing quiz is worth an island;
+ * an internal CRUD panel is not worth shipping a framework for.
+ */
+import { site, enabledCategories } from '../../config';
+
+// Belt and braces alongside public/_headers.
+Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Inventory admin — {site.identity.name}</title>
+    <link rel="icon" href={site.brand.logos.favicon} />
+    <style define:vars={{
+      primary: site.brand.colors.primary,
+      deep: site.brand.colors.deep,
+      night: site.brand.colors.night,
+      accent: site.brand.colors.accent,
+      urgent: site.brand.colors.urgent,
+      ink: site.brand.colors.ink,
+      inkMuted: site.brand.colors.inkMuted,
+      surfaceAlt: site.brand.colors.surfaceAlt,
+    }}>
+      :root { color-scheme: light; }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        background: var(--surfaceAlt);
+        color: var(--ink);
+        line-height: 1.5;
+      }
+      header {
+        background: linear-gradient(180deg, var(--primary), var(--deep));
+        color: #fff; padding: 18px 20px;
+        display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      }
+      header h1 { font-size: 1.05rem; font-weight: 700; }
+      header .who { font-size: .78rem; opacity: .8; }
+      main { max-width: 1100px; margin: 0 auto; padding: 24px 20px 80px; }
+      .card {
+        background: #fff; border: 1px solid #e3e8f0; border-radius: 14px;
+        padding: 20px; margin-bottom: 20px;
+      }
+      h2 { font-size: 1rem; margin-bottom: 12px; color: var(--deep); }
+      label { display: block; font-size: .72rem; font-weight: 600; text-transform: uppercase;
+              letter-spacing: .08em; color: var(--inkMuted); margin: 12px 0 4px; }
+      input, select, textarea {
+        width: 100%; padding: 10px 12px; font: inherit; font-size: 16px;
+        border: 1px solid #d6dceb; border-radius: 9px; background: #fff; color: var(--ink);
+      }
+      textarea { resize: vertical; min-height: 64px; }
+      button {
+        font: inherit; font-weight: 700; cursor: pointer; border: none;
+        border-radius: 9px; padding: 11px 18px; min-height: 44px;
+      }
+      .primary { background: var(--accent); color: var(--night); }
+      .ghost { background: #fff; color: var(--deep); border: 1px solid #d6dceb; }
+      .danger { background: #fff; color: var(--urgent); border: 1px solid #f0c9c7; }
+      .row { display: grid; gap: 12px; grid-template-columns: 1fr; }
+      @media (min-width: 700px) { .row.two { grid-template-columns: 1fr 1fr; } .row.three { grid-template-columns: 1fr 1fr 1fr; } }
+      table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+      th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #eef1f7; vertical-align: middle; }
+      th { font-size: .68rem; text-transform: uppercase; letter-spacing: .08em; color: var(--inkMuted); }
+      .pill { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: .7rem; font-weight: 700; }
+      .pill.available { background: #e6f6ed; color: #12603a; }
+      .pill.draft { background: #eef1f7; color: #52607d; }
+      .pill.sold, .pill.pending { background: #232a3a; color: #fff; }
+      .pill.hidden { background: #fdf0e6; color: #8a5a1a; }
+      .orphan { background: #fdecea; color: #a3231b; border: 1px solid #f3c7c3;
+                padding: 8px 12px; border-radius: 9px; font-size: .8rem; margin-bottom: 12px; }
+      .msg { padding: 11px 14px; border-radius: 9px; font-size: .86rem; margin-bottom: 14px; }
+      .msg.err { background: #fdecea; color: #a3231b; }
+      .msg.ok { background: #e6f6ed; color: #12603a; }
+      .hint { font-size: .78rem; color: var(--inkMuted); margin-top: 6px; }
+      .hidden { display: none !important; }
+      .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+      .login-wrap { max-width: 380px; margin: 60px auto; }
+    </style>
+  </head>
+
+  <body>
+    <header>
+      <h1>Inventory admin</h1>
+      <div>
+        <div class="who">{site.identity.name}</div>
+        <button id="logout" class="ghost hidden" style="padding:6px 12px;min-height:0;font-size:.78rem">Sign out</button>
+      </div>
+    </header>
+
+    <main>
+      <!-- LOGIN -->
+      <section id="login" class="login-wrap">
+        <div class="card">
+          <h2>Sign in</h2>
+          <div id="loginMsg"></div>
+          <form id="loginForm">
+            <label for="password">Password</label>
+            <input id="password" type="password" autocomplete="current-password" required />
+            <div class="actions">
+              <button class="primary" type="submit">Sign in</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- PANEL -->
+      <section id="panel" class="hidden">
+        <div id="globalMsg"></div>
+
+        <div class="card">
+          <h2>Products</h2>
+          <div id="orphanNotice" class="orphan hidden"></div>
+          <table>
+            <thead>
+              <tr>
+                <th>Product</th><th>Category</th><th>Status</th><th>Price</th><th>Monthly</th><th>Qty</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="rows"><tr><td colspan="7">Loading…</td></tr></tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <h2 id="formTitle">Add a product</h2>
+          <div id="formMsg"></div>
+          <form id="productForm">
+            <div class="row two">
+              <div>
+                <label for="inventory_name">Product name</label>
+                <input id="inventory_name" required />
+              </div>
+              <div>
+                <label for="slug">URL slug <span style="text-transform:none;letter-spacing:0">(blank = from name)</span></label>
+                <input id="slug" />
+              </div>
+            </div>
+
+            <div class="row three">
+              <div>
+                <label for="category">Category</label>
+                <select id="category" required>
+                  {enabledCategories.map((c) => <option value={c.slug}>{c.label}</option>)}
+                </select>
+                <p class="hint">Only what this site sells. Add more in client.config.ts.</p>
+              </div>
+              <div>
+                <label for="status">Status</label>
+                <select id="status">
+                  <option value="draft">Draft (hidden)</option>
+                  <option value="available">Available</option>
+                  <option value="pending">Sale pending</option>
+                  <option value="sold">Sold</option>
+                  <option value="hidden">Hidden</option>
+                </select>
+              </div>
+              <div>
+                <label for="quantity">Quantity</label>
+                <input id="quantity" type="number" min="0" value="1" />
+              </div>
+            </div>
+
+            <div class="row three">
+              <div><label for="price">Cash price ($)</label><input id="price" type="number" min="0" /></div>
+              <div><label for="monthly_payment">Monthly ($)</label><input id="monthly_payment" type="number" min="0" /></div>
+              <div><label for="sort_order">Sort order</label><input id="sort_order" type="number" value="0" /></div>
+            </div>
+
+            <label for="imageFile">Main photo</label>
+            <input id="imageFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif" />
+            <p class="hint" id="uploadHint">JPG, PNG, WEBP or GIF, up to 6 MB.</p>
+            <label for="primary_image">Photo URL</label>
+            <input id="primary_image" placeholder="/images/x.webp or https://…" />
+            <p class="hint">Must start with / or https:// — a relative path 404s on product pages.</p>
+
+            <div class="row two">
+              <div><label for="promo_label">Badge</label><input id="promo_label" placeholder="LAST ONE" /></div>
+              <div><label for="delivery_promise">Delivery promise</label><input id="delivery_promise" placeholder="Delivery in 2 weeks" /></div>
+            </div>
+
+            <label for="quick_facts">Quick facts (one per line, first 3 show on the card)</label>
+            <textarea id="quick_facts" rows="3"></textarea>
+
+            <label for="why_bullets">Why this one (one per line)</label>
+            <textarea id="why_bullets" rows="3"></textarea>
+
+            <div class="row two">
+              <div><label for="headline">Headline</label><input id="headline" /></div>
+              <div><label for="positioning_label">Positioning label</label><input id="positioning_label" placeholder="Most popular" /></div>
+            </div>
+
+            <label for="hero_description">Short description</label>
+            <textarea id="hero_description" rows="2"></textarea>
+            <label for="long_description">Long description</label>
+            <textarea id="long_description" rows="4"></textarea>
+            <div class="row two">
+              <div><label for="best_for">Best for</label><input id="best_for" /></div>
+              <div><label for="ghl_tags">CRM tags (one per line)</label><textarea id="ghl_tags" rows="2"></textarea></div>
+            </div>
+
+            <div class="actions">
+              <button class="primary" type="submit">Save product</button>
+              <button class="ghost" type="button" id="resetForm">Clear</button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    {/* is:inline — plain browser JS, left untouched by the bundler. The
+        admin panel is internal, so there is nothing to gain from bundling
+        it, and inlining keeps this page free of build-time dependencies. */}
+    <script is:inline>
+      // Token lives in memory only. Not localStorage: a persisted admin
+      // token survives the tab and is readable by any script that gets on
+      // the page. Closing the tab ends the session here.
+      let token = '';
+      let categories = [];
+
+      const $ = (id) => document.getElementById(id);
+      const show = (el, on) => el.classList.toggle('hidden', !on);
+
+      function msg(target, text, kind) {
+        target.innerHTML = text ? `<div class="msg ${kind}">${text}</div>` : '';
+      }
+
+      async function api(path, options = {}) {
+        const res = await fetch(`/api/admin${path}`, {
+          ...options,
+          headers: {
+            ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...(options.headers || {}),
+          },
+        });
+        let data = {};
+        try { data = await res.json(); } catch { /* non-JSON */ }
+        if (res.status === 401) { token = ''; show($('login'), true); show($('panel'), false); show($('logout'), false); }
+        return { status: res.status, data };
+      }
+
+      const lines = (v) => v.split('\n').map((s) => s.trim()).filter(Boolean);
+
+      /* ---------- login ---------- */
+      $('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        msg($('loginMsg'), '', '');
+        const { data } = await api('?action=login', {
+          method: 'POST',
+          body: JSON.stringify({ password: $('password').value }),
+        });
+        if (!data.ok) { msg($('loginMsg'), data.error || 'Sign in failed.', 'err'); return; }
+        token = data.token;
+        $('password').value = '';
+        show($('login'), false); show($('panel'), true); show($('logout'), true);
+        load();
+      });
+
+      $('logout').addEventListener('click', async () => {
+        await api('?action=logout', { method: 'POST' });
+        token = '';
+        show($('login'), true); show($('panel'), false); show($('logout'), false);
+      });
+
+      /* ---------- list ---------- */
+      async function load() {
+        const { data } = await api('');
+        if (!data.ok) { msg($('globalMsg'), data.error || 'Could not load products.', 'err'); return; }
+        categories = data.categories || [];
+
+        if (data.imagesConfigured === false) {
+          $('uploadHint').textContent =
+            'Image hosting is not configured yet, so uploads will be refused. Paste an https:// URL instead.';
+        }
+
+        const orphans = data.products.filter((p) => p.orphaned);
+        if (orphans.length) {
+          $('orphanNotice').textContent =
+            `${orphans.length} product${orphans.length === 1 ? ' sits' : 's sit'} in a category this site no longer sells. ` +
+            `They are invisible to customers. Delete them, or re-enable the category in client.config.ts.`;
+        }
+        show($('orphanNotice'), orphans.length > 0);
+
+        const tbody = $('rows');
+        if (!data.products.length) {
+          tbody.innerHTML = '<tr><td colspan="7">No products yet.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = '';
+        for (const p of data.products) {
+          const tr = document.createElement('tr');
+
+          const name = document.createElement('td');
+          name.textContent = p.inventory_name;
+          if (p.orphaned) {
+            const flag = document.createElement('div');
+            flag.style.cssText = 'font-size:.72rem;color:#a3231b';
+            flag.textContent = 'not sold here any more';
+            name.appendChild(flag);
+          }
+
+          const cat = document.createElement('td');
+          cat.textContent = p.category;
+
+          const status = document.createElement('td');
+          const sel = document.createElement('select');
+          for (const s of ['draft', 'available', 'pending', 'sold', 'hidden']) {
+            const o = document.createElement('option');
+            o.value = s; o.textContent = s; o.selected = p.status === s;
+            sel.appendChild(o);
+          }
+          sel.addEventListener('change', async () => {
+            const { data: r } = await api('', {
+              method: 'PATCH',
+              body: JSON.stringify({ slug: p.slug, status: sel.value }),
+            });
+            msg($('globalMsg'), r.ok ? `Updated ${p.inventory_name}.` : (r.error || 'Update failed.'), r.ok ? 'ok' : 'err');
+          });
+          status.appendChild(sel);
+
+          const price = document.createElement('td');
+          price.textContent = p.price ? `$${p.price.toLocaleString()}` : '—';
+          const monthly = document.createElement('td');
+          monthly.textContent = p.monthly_payment ? `$${p.monthly_payment}/mo` : '—';
+          const qty = document.createElement('td');
+          qty.textContent = p.quantity;
+
+          const act = document.createElement('td');
+          const edit = document.createElement('button');
+          edit.className = 'ghost'; edit.textContent = 'Edit';
+          edit.style.cssText = 'padding:6px 12px;min-height:0;font-size:.78rem;margin-right:6px';
+          edit.addEventListener('click', () => fill(p));
+          const del = document.createElement('button');
+          del.className = 'danger'; del.textContent = 'Delete';
+          del.style.cssText = 'padding:6px 12px;min-height:0;font-size:.78rem';
+          del.addEventListener('click', async () => {
+            if (!confirm(`Delete "${p.inventory_name}"? It is hidden, not erased.`)) return;
+            const { data: r } = await api(`?slug=${encodeURIComponent(p.slug)}`, { method: 'DELETE' });
+            msg($('globalMsg'), r.ok ? 'Deleted.' : (r.error || 'Delete failed.'), r.ok ? 'ok' : 'err');
+            if (r.ok) load();
+          });
+          act.append(edit, del);
+
+          tr.append(name, cat, status, price, monthly, qty, act);
+          tbody.appendChild(tr);
+        }
+      }
+
+      /* ---------- form ---------- */
+      function fill(p) {
+        $('formTitle').textContent = `Edit: ${p.inventory_name}`;
+        $('inventory_name').value = p.inventory_name || '';
+        $('slug').value = p.slug || '';
+        $('category').value = p.category || (categories[0] && categories[0].slug) || '';
+        $('status').value = p.status || 'draft';
+        $('quantity').value = p.quantity ?? 0;
+        $('price').value = p.price || '';
+        $('monthly_payment').value = p.monthly_payment || '';
+        $('sort_order').value = p.sort_order ?? 0;
+        $('primary_image').value = p.primary_image || '';
+        $('promo_label').value = p.promo_label || '';
+        $('delivery_promise').value = p.delivery_promise || '';
+        $('quick_facts').value = (p.quick_facts || []).join('\n');
+        $('why_bullets').value = (p.why_bullets || []).join('\n');
+        $('ghl_tags').value = (p.ghl_tags || []).join('\n');
+        $('headline').value = p.headline || '';
+        $('positioning_label').value = p.positioning_label || '';
+        $('hero_description').value = p.hero_description || '';
+        $('long_description').value = p.long_description || '';
+        $('best_for').value = p.best_for || '';
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      }
+
+      $('resetForm').addEventListener('click', () => {
+        $('productForm').reset();
+        $('formTitle').textContent = 'Add a product';
+        msg($('formMsg'), '', '');
+      });
+
+      $('imageFile').addEventListener('change', async () => {
+        const file = $('imageFile').files[0];
+        if (!file) return;
+        msg($('formMsg'), 'Uploading…', 'ok');
+        const fd = new FormData();
+        fd.append('image', file);
+        const { data } = await api('?action=upload', { method: 'POST', body: fd });
+        if (!data.ok) { msg($('formMsg'), data.error || 'Upload failed.', 'err'); return; }
+        $('primary_image').value = data.url;
+        msg($('formMsg'), 'Uploaded. URL filled in below.', 'ok');
+      });
+
+      $('productForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+          slug: $('slug').value,
+          inventory_name: $('inventory_name').value,
+          category: $('category').value,
+          status: $('status').value,
+          quantity: $('quantity').value,
+          price: $('price').value,
+          monthly_payment: $('monthly_payment').value,
+          sort_order: $('sort_order').value,
+          primary_image: $('primary_image').value,
+          promo_label: $('promo_label').value,
+          delivery_promise: $('delivery_promise').value,
+          quick_facts: lines($('quick_facts').value),
+          why_bullets: lines($('why_bullets').value),
+          ghl_tags: lines($('ghl_tags').value),
+          headline: $('headline').value,
+          positioning_label: $('positioning_label').value,
+          hero_description: $('hero_description').value,
+          long_description: $('long_description').value,
+          best_for: $('best_for').value,
+        };
+        const { data } = await api('', { method: 'POST', body: JSON.stringify(payload) });
+        if (!data.ok) { msg($('formMsg'), data.error || 'Save failed.', 'err'); return; }
+        msg($('formMsg'), 'Saved.', 'ok');
+        $('productForm').reset();
+        $('formTitle').textContent = 'Add a product';
+        load();
+      });
+    </script>
+  </body>
+</html>

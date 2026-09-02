@@ -1,0 +1,63 @@
+---
+/**
+ * THANK YOU — the post-submit page.
+ *
+ * noindex, and set to never cache: it is a per-visitor confirmation, and a
+ * cached copy served to the next person would be both wrong and a privacy
+ * problem. Phase 8 fires the conversion event from here.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { site, derived } from '../config';
+
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+---
+
+<BaseLayout title="Thank you" noindex>
+  <section class="ty">
+    <div class="wrap">
+      <p class="eyebrow">Got it</p>
+      <h1>We'll be in touch shortly</h1>
+      <p class="ty-sub">
+        Someone from {site.identity.name} will reach out with current pricing and what's on the
+        floor right now. If you'd rather not wait, call us.
+      </p>
+
+      <div class="ty-actions">
+        <a class="btn btn-gold" href={derived.telHref}>Call {derived.phoneDisplay}</a>
+        <a class="btn btn-ghost" href={site.nav.primaryCta.href}>{site.nav.primaryCta.label}</a>
+      </div>
+
+      <div class="ty-visit">
+        <h2>While you're here</h2>
+        <p>{derived.addressOneLine}</p>
+        <ul>
+          {derived.hoursDisplay.map((h) => <li><span>{h.days}</span> {h.time}</li>)}
+        </ul>
+        <a class="ty-directions" href={derived.directionsUrl} target="_blank" rel="noopener">Get directions</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .ty {
+    background: linear-gradient(180deg, var(--brand-night), var(--brand-abyss));
+    color: #fff;
+    padding: 72px 0 88px;
+    min-height: 60vh;
+  }
+  .ty .eyebrow { color: var(--brand-accent-soft); }
+  .ty h1 { font-size: clamp(2rem, 6vw, 3.2rem); letter-spacing: -0.02em; line-height: 1.06; }
+  .ty-sub { margin-top: 16px; max-width: 56ch; color: var(--brand-on-dark); line-height: 1.65; }
+  .ty-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+  .ty-visit { margin-top: 48px; padding-top: 28px; border-top: 1px solid rgb(255 255 255 / 0.12); }
+  .ty-visit h2 {
+    font-family: var(--brand-font-mono); font-size: 0.66rem; font-weight: 600;
+    letter-spacing: 0.2em; text-transform: uppercase; color: var(--brand-accent-soft);
+    margin-bottom: 12px;
+  }
+  .ty-visit p { color: var(--brand-on-dark); }
+  .ty-visit ul { list-style: none; margin-top: 10px; font-size: 0.88rem; color: var(--brand-on-dark-muted); }
+  .ty-visit ul span { color: #fff; font-weight: 600; }
+  .ty-directions { display: inline-block; margin-top: 14px; color: var(--brand-accent); text-decoration: underline; }
+</style>
