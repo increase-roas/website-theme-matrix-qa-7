@@ -8,7 +8,7 @@ export const rawClientConfig: ClientConfigInput = {
     "shortName": "theme-matrix-qa",
     "foundedYear": 2020,
     "tagline": "Premium outdoor living",
-    "siteUrl": "https://example.com",
+    "siteUrl": "https://theme-matrix-qa.increaseroas.com",
     "schemaType": "HomeAndConstructionBusiness"
   },
   "contact": {
@@ -112,11 +112,11 @@ export const rawClientConfig: ClientConfigInput = {
       "googleFontsHref": "https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;500;600;700&family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
     },
     "logos": {
-      "nav": "/local-assets/clients/7-theme-matrix-qa/astro/navLogo-385b3a53b143cfd0fca210f1101eeab010d9450fbd7c7819485d1996d2fb3cbf-e10107f77fc84675abe718eccdd0bf66.webp",
-      "footer": "/local-assets/clients/7-theme-matrix-qa/astro/footerLogo-4fff2d35f2a11e4f5bea9a355a1faa1e7b83c5cea689f765de9d27456b0eedc4-88f3348e66e54daaa753f9ae7bc8c396.webp",
-      "inventory": "/local-assets/clients/7-theme-matrix-qa/astro/inventoryLogo-df3a6619de1136710f3fe72fd650a6798236fd0c787fd47f1dc0851f86916d24-e8cbfa8e8db34c3f849d7f1d45503724.webp",
-      "favicon": "/local-assets/clients/7-theme-matrix-qa/astro/favicon-d36011f3639f65e6567971e3f2656487024249bf0059e9f0c6928ff0362ec0b1-9387d891d1a44059a68302e604563b5e.webp",
-      "ogImage": "/local-assets/clients/7-theme-matrix-qa/astro/ogImage-3bffae80f02af521eb6a112c3a93ecc7128ff4f6dfeb5f1a3437051565fd3a40-011540a01079408eb84b34dff124bedc.webp"
+      "nav": "/brand/logo-nav.svg",
+      "footer": "/brand/logo-footer.svg",
+      "inventory": null,
+      "favicon": "/brand/favicon.svg",
+      "ogImage": "/brand/og-default.png"
     },
     "radius": {
       "card": 24,
@@ -153,7 +153,7 @@ export const rawClientConfig: ClientConfigInput = {
       "enabled": true,
       "label": "Hot Tubs",
       "blurb": "hot tubs near us",
-      "heroImage": "/local-assets/clients/7-theme-matrix-qa/astro/categoryHotTubs-eb190e5d11fc0a2d4874ef904bcf940f42079ed8aaeaa44b870420d75739dd7f-0c9aee37f7b3471f96fd5ab71fae62d4.webp",
+      "heroImage": null,
       "sortOrder": 0
     }
   },
