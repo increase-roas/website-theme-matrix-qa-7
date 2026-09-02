@@ -1,31 +1,11 @@
-# Cloudflare WORKERS config (@astrojs/cloudflare v13 dropped Pages support).
-#
-# Contains no secrets. Values here are bindings and non-sensitive vars only.
-# Secrets are set with:  wrangler secret put NAME
-#
-# Per-client values marked TODO are filled in when a client site is set up.
-
-name = "htl-website-template"
+name = "website-theme-matrix-qa-7-preview"
 compatibility_date = "2026-08-01"
 compatibility_flags = ["nodejs_compat"]
 
-# --- D1: inventory / products / leads (Phase 3) ---
-# [[d1_databases]]
-# binding = "DB"                  # must match integrations.d1BindingName in config
-# database_name = "TODO-client-inventory"
-# database_id = "TODO-run: wrangler d1 create <name>"
+[observability]
+enabled = true
 
-# --- R2: product images (Phase 6) ---
-# [[r2_buckets]]
-# binding = "PRODUCT_IMAGES"      # must match integrations.r2BindingName in config
-# bucket_name = "TODO-client-product-images"
-
-[vars]
-# Non-secret, public-safe values only.
-# PUBLIC_SENTRY_DSN = "TODO"
-
-# Secrets — DO NOT put these in this file:
-#   wrangler secret put ADMIN_PASSWORD
-#   wrangler secret put ADMIN_SESSION_SECRET
-#   wrangler secret put GHL_API_KEY
-#   wrangler secret put META_CAPI_ACCESS_TOKEN
+[[d1_databases]]
+binding = "DB"
+database_name = "website-theme-matrix-qa-7-preview-inventory"
+database_id = "51ef05eb-48e0-4c53-947c-76639b1e2d66"
