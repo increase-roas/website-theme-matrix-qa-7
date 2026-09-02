@@ -72,6 +72,9 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Apply local D1 schema for the gate
+        run: npm run db:apply:local
+
       - name: Run pre-deploy gate
         run: npm run gate
 
