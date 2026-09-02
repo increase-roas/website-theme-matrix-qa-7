@@ -9,3 +9,7 @@ enabled = true
 binding = "DB"
 database_name = "website-theme-matrix-qa-7-preview-inventory"
 database_id = "51ef05eb-48e0-4c53-947c-76639b1e2d66"
+
+[[r2_buckets]]
+binding = "PRODUCT_IMAGES"
+bucket_name = "website-theme-matrix-qa-7-images"
