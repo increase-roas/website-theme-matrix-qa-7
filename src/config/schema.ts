@@ -155,7 +155,7 @@ const identitySchema = z.object({
     .min(1800)
     // Workers freeze Date during I/O-free module init, so getFullYear()
     // here would become 1970 and reject every real founding year.
-    .max(2100),
+    .max(new Date().getFullYear() >= 2000 ? new Date().getFullYear() : 2100),
   /** One-sentence description. Used for meta description fallback + schema. */
   tagline: z.string().min(1),
   /** Production origin, no trailing slash. Drives canonical URLs + sitemap. */

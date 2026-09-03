@@ -206,7 +206,7 @@
       "constraints": {
         "integer": true,
         "min": 1800,
-        "max": 2100
+        "max": 2026
       },
       "source": "ask",
       "group": "business",
