@@ -4,11 +4,11 @@ import type { ClientConfigInput } from "./schema";
 export const rawClientConfig: ClientConfigInput = {
   "deployMode": "client",
   "identity": {
-    "name": "The Hot Tub",
+    "name": "Sun Pool & Spa Supply",
     "shortName": "theme-matrix-qa",
-    "foundedYear": 2020,
-    "tagline": "Premium outdoor living",
-    "siteUrl": "https://theme-matrix-qa.increaseroas.com",
+    "foundedYear": 1978,
+    "tagline": "The best hot tub and swim spa store in San Diego County. Real units on the floor.",
+    "siteUrl": "https://sunpoolandspasupply.com",
     "schemaType": "HomeAndConstructionBusiness"
   },
   "contact": {
@@ -170,8 +170,8 @@ export const rawClientConfig: ClientConfigInput = {
       {
         "type": "hero",
         "eyebrow": null,
-        "headline": "Theme Matrix QA 2026-08-18",
-        "subhead": "Discover a better way to enjoy your backyard.",
+        "headline": "Sun Pool & Spa Supply",
+        "subhead": "The best hot tub and swim spa store in San Diego County. Real units on the floor.",
         "actions": [
           {
             "label": "Contact us",
