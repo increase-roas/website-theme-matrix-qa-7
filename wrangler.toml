@@ -1,4 +1,4 @@
-name = "website-theme-matrix-qa-7-preview"
+name = "website-theme-matrix-qa-7"
 compatibility_date = "2026-08-01"
 compatibility_flags = ["nodejs_compat", "nodejs_als"]
 
@@ -7,8 +7,8 @@ enabled = true
 
 [[d1_databases]]
 binding = "DB"
-database_name = "website-theme-matrix-qa-7-preview-inventory"
-database_id = "51ef05eb-48e0-4c53-947c-76639b1e2d66"
+database_name = "website-theme-matrix-qa-7-inventory"
+database_id = "6d48ed41-4b49-4d10-828f-4c59e1a5ee50"
 
 [[r2_buckets]]
 binding = "PRODUCT_IMAGES"
@@ -16,4 +16,4 @@ bucket_name = "website-theme-matrix-qa-7-images"
 
 [[kv_namespaces]]
 binding = "SESSION"
-id = "8d78d85f7f7a4e07bccce07a141ec6ac"
+id = "f0b7b4dd06c74b8f8b63e8a2887c63b3"
