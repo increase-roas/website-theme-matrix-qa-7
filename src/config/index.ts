@@ -217,9 +217,14 @@ export const derived = {
   smsHref: `sms:${site.contact.smsPhone ?? site.contact.phone}`,
   emailHref: site.contact.email ? `mailto:${site.contact.email}` : null,
 
-  // Identity
-  yearsInBusiness: new Date().getFullYear() - site.identity.foundedYear,
-  copyrightLine: `© ${new Date().getFullYear()} ${site.identity.name}. All rights reserved.`,
+  // Identity — getters so Workers Date-freeze at module init cannot
+  // stamp copyright as 1970 or a negative years-in-business.
+  get yearsInBusiness() {
+    return new Date().getFullYear() - site.identity.foundedYear;
+  },
+  get copyrightLine() {
+    return `© ${new Date().getFullYear()} ${site.identity.name}. All rights reserved.`;
+  },
 
   // Address + maps
   addressOneLine,
