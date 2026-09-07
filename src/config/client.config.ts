@@ -2,13 +2,13 @@
 import type { ClientConfigInput } from "./schema";
 
 export const rawClientConfig: ClientConfigInput = {
-  "deployMode": "template",
+  "deployMode": "client",
   "identity": {
     "name": "Sun Pool & Spa Supply",
     "shortName": "theme-matrix-qa",
     "foundedYear": 1978,
     "tagline": "The best hot tub and swim spa store in San Diego County. Real units on the floor.",
-    "siteUrl": "https://example.com",
+    "siteUrl": "https://increaseroasai.com/",
     "schemaType": "HomeAndConstructionBusiness"
   },
   "contact": {
